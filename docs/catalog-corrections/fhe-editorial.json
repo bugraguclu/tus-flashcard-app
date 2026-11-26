@@ -1,0 +1,5631 @@
+{
+ "schema": "tusankim.catalog-editorial/v1",
+ "date": "2026-11-26",
+ "course": "FHE",
+ "originalReference": {
+  "gitRef": "a08dd99",
+  "path": "assets/catalog/bka-tus-complete.apkg"
+ },
+ "firstRound": {
+  "date": "2026-10-17",
+  "gitRef": "f3266d5"
+ },
+ "packageBeforeSha256": "aa246e6f6fb0ac620ff294eea0507708f5a7493450d9f50e24788ab62970cf2d",
+ "reviewedNotes": 510,
+ "reviewedCards": 597,
+ "boundaries": {
+  "cards": "74b2cd2b72adceb61b9f437cc121f5a2fe11040d92778d4523df68337d3416f1",
+  "revlog": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "graves": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "collection": "d77b2e5569583e7afdc18d6a8747fc488cef0cf907da5f8c66cf90104b61eff6",
+  "noteIdentity": "90984ca47dbdefd40db5c3b25a4c1d072925253cb109a90419604f7b597759fc",
+  "otherCourses": "74119c592377949111499c50647b0354d5b97d156cb2a0707c5a6888d3297951"
+ },
+ "scope": [
+  {
+   "noteId": 1604085126478,
+   "guid": "w-3P83TDYS",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604085194158,
+   "guid": "o}XN8<u=i@",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604085334453,
+   "guid": "v)Vdous(il",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604085366427,
+   "guid": "l(=Jq^8r`S",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604085413421,
+   "guid": "qWu,6&^,@<",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604085493492,
+   "guid": "LNQIxXm}J+",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604085537602,
+   "guid": "k=}W-EXNNj",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604085610020,
+   "guid": "t#akU[4])$",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604085720033,
+   "guid": "x/B+$iScLJ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604085781105,
+   "guid": "BRtxa<UFAk",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604085864171,
+   "guid": "x~[l_i{[-4",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604085891585,
+   "guid": "IQ&vy5I+Lk",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604085946049,
+   "guid": "eYG78[C;{T",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604085960019,
+   "guid": "o2UEe=!?|l",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604085991017,
+   "guid": "IbRg/=vv#~",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604086017738,
+   "guid": "v|T&k[3$F9",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604086088171,
+   "guid": "kYbxYcCIUg",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604086141344,
+   "guid": "JS?~Y%gbxT",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604086170314,
+   "guid": "EdCjkX]8B;",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604086224431,
+   "guid": "vN<%]IT/M~",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604086279273,
+   "guid": "CPQcBucm{f",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604086401015,
+   "guid": "f!sQ]eeR)}",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604086447942,
+   "guid": "dSZ_2Og{h;",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604086483623,
+   "guid": "Ab]cHg^o:3",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604086532189,
+   "guid": "eNhA=Kt#h[",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604086559133,
+   "guid": "GOP9.`OAaQ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604086615831,
+   "guid": "uD)JS8gu)-",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604086641567,
+   "guid": "CLX7mUv1m#",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604086706372,
+   "guid": "zX.,:(z7@D",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604086810518,
+   "guid": "y(sqp_u4>k",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604086844397,
+   "guid": "k5-JIx01M(",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604086941029,
+   "guid": "J^l+;VQ~Dq",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604087026926,
+   "guid": "NbQ5dg{6<,",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604087077845,
+   "guid": "FFg8BoHGXk",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604087095029,
+   "guid": "Cc:~|4o<6M",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604087140148,
+   "guid": "h12eT!bzh.",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604087160186,
+   "guid": "dDI<TJcuQY",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604087208154,
+   "guid": "Jog+<m0.rE",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604087243874,
+   "guid": "pg8!#LE>+{",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604087337938,
+   "guid": "DiTIK*y%Wr",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604087373075,
+   "guid": "i#J,{YnEGG",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604087412883,
+   "guid": "L=)dHy0HoB",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604087446225,
+   "guid": "in!QaB``kO",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604087477145,
+   "guid": "F>Zl+!N|YE",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604087491555,
+   "guid": "h)5aeIa:LF",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604087519249,
+   "guid": "Pov;iEU.H:",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604087566592,
+   "guid": "i-VW<LM+|R",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604087592923,
+   "guid": "o;/#a=}vve",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604087653514,
+   "guid": "oM;m^D*D+Q",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604087687626,
+   "guid": "N6,::uEW?*",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604087710186,
+   "guid": "cqBb.S5:Tm",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604087750282,
+   "guid": "Ftidz)e;r=",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604087805874,
+   "guid": "n/269EsS%n",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604087839303,
+   "guid": "x_iRn@Ct$=",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604087885127,
+   "guid": "bxJI$+npQO",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604087967064,
+   "guid": "oj)lgEt!9#",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604088015136,
+   "guid": "Cei4[J1b*?",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604088057456,
+   "guid": "v0MPYK3.V+",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604088123829,
+   "guid": "Lw){0wA]D;",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604088158077,
+   "guid": "EoPMpN)Nil",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604088222917,
+   "guid": "jqd+%`LdaX",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604088235839,
+   "guid": "hn[<`9B*sT",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604088324879,
+   "guid": "xP,yBL6kS?",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604088369135,
+   "guid": "P*8B4@+h:#",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604088397574,
+   "guid": "II*oW6,kct",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604088448756,
+   "guid": "xzJ$fHf(TJ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604088528094,
+   "guid": "AK*x.qpW2o",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604088635709,
+   "guid": "P1;}Or=KI=",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604088685531,
+   "guid": "BFw^`4}&VB",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604088717148,
+   "guid": "u>GmK3UYhm",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604088743650,
+   "guid": "v1t=#b.$2~",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604088784516,
+   "guid": "g~4Cx~Q^<",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604088813538,
+   "guid": "l0IowP{%up",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604090894848,
+   "guid": "zj03a!aQP2",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604090920586,
+   "guid": "z_9^,;AGB)",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604090940442,
+   "guid": "M@>Ij5mHHJ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604090992392,
+   "guid": "G,//1VNvqT",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604091041168,
+   "guid": "n=ctwL#<qc",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604091139199,
+   "guid": "I]Q*hyUjwm",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604091161777,
+   "guid": "d:&Fszksi%",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604091219658,
+   "guid": "l4BfY>toez",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604091236768,
+   "guid": "n}EUvV|vOa",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604091334806,
+   "guid": "e-C1ot$X*G",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604091397078,
+   "guid": "bEY11%)xJ/",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604091417550,
+   "guid": "kj;A%%i}vg",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604091486440,
+   "guid": "of[fPk./XT",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604091521501,
+   "guid": "9{2+avdko",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604091566399,
+   "guid": "QG$mHl&:7%",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604091624172,
+   "guid": "FFp^{`a,b|",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604091639318,
+   "guid": "I/Em[yoH~I",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604091670997,
+   "guid": "xoLl;h5?5}",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604091814382,
+   "guid": "LTeMV:K$<p",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604091838771,
+   "guid": "Or_y[EoCL^",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604091914445,
+   "guid": "DI~b@08{Wt",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604091966083,
+   "guid": "ryAdf^Xk>z",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604091990988,
+   "guid": "DWe|0aNAUU",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604092025021,
+   "guid": "#9`~3oeOQ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604092085701,
+   "guid": "FQ9J.sB3V`",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604092115716,
+   "guid": "J.QSIpuZ5Q",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604092156148,
+   "guid": "zUYml[(S0^",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604092270313,
+   "guid": "mu:y7DO^Pf",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604092393449,
+   "guid": "Kt|;W(7A#m",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604092463739,
+   "guid": "j*/6Er4({%",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604092534794,
+   "guid": "j?M[%tWpMj",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604092574833,
+   "guid": "nAXD6g-bEZ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604092625434,
+   "guid": "qo!O*xY|zf",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604092719271,
+   "guid": "v)^jh;8J;7",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604092746479,
+   "guid": "hW?T[~RVUQ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604092806279,
+   "guid": "o9a&$Z53xc",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604092879489,
+   "guid": "O4?&eS6s-`",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604092988806,
+   "guid": "Frl3p0n0cj",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604093022614,
+   "guid": "bLbg*~77O2",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604093040144,
+   "guid": "J7|zTAYH8$",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604093090342,
+   "guid": "hx!kcGD|G;",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604093148717,
+   "guid": "Qy<)|vrKDe",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604093196157,
+   "guid": "e5d>*7(eKq",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604128921685,
+   "guid": "CamF!15>|>",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604128962168,
+   "guid": "ndXj>s[V6z",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604128992086,
+   "guid": "EZ3Ocv`~_X",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604129063676,
+   "guid": "uF=`.VI[@Y",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604129126285,
+   "guid": "N|z*d:#%Vc",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604129201812,
+   "guid": "n1#Eb>X9Z[",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604129259509,
+   "guid": "[SwGFTt~%",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604129334059,
+   "guid": "ENo!P|@:dU",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604129383876,
+   "guid": "N9Ow@j<Wm#",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604129474061,
+   "guid": "G^R%Ht3oR?",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604129521211,
+   "guid": "ImHo1,MhV?",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604129551042,
+   "guid": "r0++cWP0-N",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604129603826,
+   "guid": "N/{>u8%{5;",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604129639970,
+   "guid": "KJP8AgX$E1",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604129658794,
+   "guid": "f/T?*[Fjqi",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604129691489,
+   "guid": "G=O9H;;9H+",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604129738275,
+   "guid": "IP+@VW1{0(",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604130190511,
+   "guid": "q,X+jm>g1&",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604130308351,
+   "guid": "h}@<0^)QCB",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604130333232,
+   "guid": "k:vz5taxL*",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604130380655,
+   "guid": "xG4k}L6jWH",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604130435631,
+   "guid": "gvDfNYaC/o",
+   "ordinals": [
+    1,
+    2,
+    3,
+    6
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604130459341,
+   "guid": "ChD:5TiuNV",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604130497222,
+   "guid": "bp~YN#!`nl",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604130573733,
+   "guid": "b$RZ?D1[]j",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604130621885,
+   "guid": "F]a$<SVvln",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604130656359,
+   "guid": "z=kC4)V:_*",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604130732062,
+   "guid": "L=1clNSSy.",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604130778095,
+   "guid": "uZ..=W$Zj1",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604130826422,
+   "guid": "zZWy.YeKuy",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604130849876,
+   "guid": "J|B;Y>vp_4",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604130899204,
+   "guid": "daJ1MQO-R_",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604130928109,
+   "guid": "jVjH~VN>S{",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604141776037,
+   "guid": "n^XXSg2tG`",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604141815394,
+   "guid": "Mz~6g[w*7^",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604141842137,
+   "guid": "lPx8nHhgVZ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604141871630,
+   "guid": "H]$b08F>48",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604141927065,
+   "guid": "h^h!ZY?1+q",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604141947196,
+   "guid": "DLZW-WoAlt",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604141994220,
+   "guid": "N&g97.p}hH",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604142018685,
+   "guid": "KJmIv(qL/S",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604142072336,
+   "guid": "dAu?gA2Ng2",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604142111594,
+   "guid": "mF)YN]he`3",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604142146565,
+   "guid": "HHlW.n&fuM",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604142158868,
+   "guid": "r0{bZ*:<U.",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604142224411,
+   "guid": "f-5$i8JUTn",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604142265104,
+   "guid": "N@gv|BtJc0",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604142419665,
+   "guid": "H8aGstIs6-",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604142496841,
+   "guid": "JZ_n>m(yz!",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604142558595,
+   "guid": "e/bJ3:dvlL",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604142579044,
+   "guid": "wEcE6fG{mE",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604142616354,
+   "guid": "c6~Z(>qI+,",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604142686067,
+   "guid": "b84Q#FtxYk",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604142727002,
+   "guid": "FZ>@~Z08nL",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604142807065,
+   "guid": "HqrpK8*&p]",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604142844639,
+   "guid": "Pu{6X!LJX&",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604142948421,
+   "guid": "mWo}jWxkA5",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604142980633,
+   "guid": "CAm0<d/IDI",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604143003266,
+   "guid": "N:d1wC;jdZ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604143049764,
+   "guid": "vJTUTg$Gp=",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604143083916,
+   "guid": "p1_r:?_Czi",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604143114049,
+   "guid": "rE?l%%67o5",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604143229801,
+   "guid": "Mwr.T_p>f{",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604143254169,
+   "guid": "Mbo|u#wHX$",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604143325479,
+   "guid": "N]&aL_F|dC",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604143363817,
+   "guid": "G74];pPzc~",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604143415995,
+   "guid": "gI|12|V,(/",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604143449871,
+   "guid": "&.2v2xTo{",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604143490436,
+   "guid": "KdG0k+Cp.h",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604143513940,
+   "guid": "p0<LEb#rIM",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604143610497,
+   "guid": "oOb)oP&}G]",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604143738839,
+   "guid": "Q:iOe-ulLn",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604143845321,
+   "guid": "p_@R2{=$av",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604143907007,
+   "guid": "Q,-LO+Hq>h",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604143952355,
+   "guid": "P+>zw-%nR/",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604144025054,
+   "guid": "u@N<#qdsa4",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604144081515,
+   "guid": "y[GS51%1}R",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604144299618,
+   "guid": "x}!ij00$_2",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604144384367,
+   "guid": "j&+6C*piar",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604144442859,
+   "guid": "g,#Ax}0![X",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    8
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604144507891,
+   "guid": "zp+yW.5t<,",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604144563162,
+   "guid": "rk4Nn(?M:.",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604144590907,
+   "guid": "Huo/UTCwx?",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604144624866,
+   "guid": "GstEvV5K7F",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604144686628,
+   "guid": "qUV~`(d>UQ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604144967497,
+   "guid": "B<ilWlB}Av",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604145008476,
+   "guid": "A.N|h.U?`-",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604145052118,
+   "guid": "N>d<}JN2^a",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604145066707,
+   "guid": "yj~b7aS}sC",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604145197014,
+   "guid": "egTSPV.CSz",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604145301827,
+   "guid": "j)&wKAzA-U",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604145342965,
+   "guid": "e0O{j(Bg*|",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604145415531,
+   "guid": "orI*^06OgV",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604145548794,
+   "guid": "sItZ,@lQ7^",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604145591708,
+   "guid": "IV;pee#f>_",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604145633793,
+   "guid": "eXQzz05@U&",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604145728849,
+   "guid": "Lf_b!-3zD+",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606846712425,
+   "guid": "HrT,#q.+9-",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606847079445,
+   "guid": "I]npcR$4Bb",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606847280529,
+   "guid": "Mqf]igU5Qw",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606847406301,
+   "guid": "J=jqZU:+)d",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606847646752,
+   "guid": "n$MFz9Db&C",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606850552928,
+   "guid": "k-W|CME=JH",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606850598998,
+   "guid": "soRh3ADcVF",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606850781079,
+   "guid": "jyWQLP<7o(",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1606850849932,
+   "guid": "HmG{MJ$O]Q",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606893857985,
+   "guid": "Q)2D)+^*nN",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606894031687,
+   "guid": "nMUG@;eV1-",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606895491819,
+   "guid": "sy|yQjzI6;",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606905093563,
+   "guid": "tUGS*8sF8:",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606905385765,
+   "guid": "job/OX.nNZ",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606905614088,
+   "guid": "skn]9P5S$E",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606905778717,
+   "guid": "CLcUVudR*h",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606909240947,
+   "guid": "ivos[)3mOo",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1606910951452,
+   "guid": "Kgu&3rks?[",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606911244717,
+   "guid": "fg+om(_%]y",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1606911526082,
+   "guid": "l=J<Jn*G[x",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607063266840,
+   "guid": "o/GFVEg3=R",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607063293242,
+   "guid": "gOF-G{9pMB",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607063824665,
+   "guid": "mlOUZ]g)XD",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607064189999,
+   "guid": "Qo-B4ToUh;",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607152161300,
+   "guid": "Fj>2otnNr/",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1607152947197,
+   "guid": "M).b^qvI1J",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607153696593,
+   "guid": "g}R{qd$sA>",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607153726443,
+   "guid": "s?+5nUXg=,",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607153768829,
+   "guid": "pO4X%!@Z`8",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607154409352,
+   "guid": "u+Z5D{p}B8",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607154770866,
+   "guid": "E9m}4>y6`R",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1607155080036,
+   "guid": "bb.A!O?#pg",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607164128761,
+   "guid": "Fsac8}PO]",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607164348666,
+   "guid": "e_M0L<vNU&",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607164429989,
+   "guid": "Jt*;)>c*jv",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607166396405,
+   "guid": "v4iJH#{O!T",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607166544926,
+   "guid": "w3~I^/1rQ5",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607167749434,
+   "guid": "j3KdaLa*`:",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607167984935,
+   "guid": "s1c3Z(J_d1",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607168945309,
+   "guid": "v)?B)Zv(eV",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610003605705,
+   "guid": "LFWPZyJ/uP",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610003636956,
+   "guid": "WbN&#JWi/",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610004125255,
+   "guid": "k]nYxCIeQZ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610004524161,
+   "guid": "NU2O16[B]<",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1610004735009,
+   "guid": "B]N[4_Q!~<",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610020139285,
+   "guid": "sCY8p&k;%&",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610021557184,
+   "guid": "D.!F@W2M/E",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610021713721,
+   "guid": "dWv3(2Tvzf",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610021854553,
+   "guid": "ehja9iKK*W",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610022055999,
+   "guid": "Ha_/IRORJB",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610022374644,
+   "guid": "Jf,@y%U4PN",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1610022645877,
+   "guid": "B}p146z3)h",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610022745930,
+   "guid": "l-$:NH8O+Z",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610023161948,
+   "guid": "x}L~4W.NjW",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610023912670,
+   "guid": "FSwh%c25j/",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610026392698,
+   "guid": "Lam_n/~/U4",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610027083636,
+   "guid": "HJHCj.x4E/",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610028952489,
+   "guid": "B+qB2B$B(1",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1610028996786,
+   "guid": "Nk3%Eo~dY|",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610031915052,
+   "guid": "ctJw&sQraO",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610032231724,
+   "guid": "KI?i7LZceX",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610032637681,
+   "guid": "NSIE:o:fK)",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610047156813,
+   "guid": "OrXyCC}@+u",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610047259745,
+   "guid": "ov/a<-Gs-~",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1610047301746,
+   "guid": "H#wWe]^</@",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610047576457,
+   "guid": "w+30shkLJV",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1610047782433,
+   "guid": "NcXkx8Cj>>",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610047976450,
+   "guid": "vbQH2N0|&W",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1610048341901,
+   "guid": "P_F]7.]P97",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610048600387,
+   "guid": "o{!:2]%L^r",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610048709344,
+   "guid": "y[=V|kkRo=",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610048816726,
+   "guid": "wEuza85e2U",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610049551183,
+   "guid": "t2hVT|h#+Q",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610049733668,
+   "guid": "rhDYRj%Ioa",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610049823423,
+   "guid": "Okx=%L!1;y",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1610050543416,
+   "guid": "hDG/Lt9;p9",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610050795001,
+   "guid": "l.>9vm7$7o",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610050947960,
+   "guid": "d7qI$8cUJd",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610052014655,
+   "guid": "o`M1EOj%x)",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610052595484,
+   "guid": "n#~m,qouOZ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610053018195,
+   "guid": "HJVW^q;w45",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610053131098,
+   "guid": "L&}6%Cv&xN",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610087716835,
+   "guid": "e}aNcyEEb*",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610088456248,
+   "guid": "G7L0(34DAT",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610089129813,
+   "guid": "M;t~P!2b4b",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610089942947,
+   "guid": "iQYRmDF@n,",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1610090070053,
+   "guid": "qG1LQeodee",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610090488999,
+   "guid": "C4!R<p5OMY",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610104236368,
+   "guid": "xh9A{K=wpL",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610104598140,
+   "guid": "kWj)[)buP>",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610105451158,
+   "guid": "rDhV-ZHu5(",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610106319074,
+   "guid": "yv{_9Jkv,1",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1610106605977,
+   "guid": "sG:mmQyX6D",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610110414233,
+   "guid": "jHRA?7iGZC",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610110489312,
+   "guid": "Pf|W?MR,I3",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610111860941,
+   "guid": "uNT;RQ@Tog",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610112309707,
+   "guid": "D]sAkF*]:!",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610117121934,
+   "guid": "Hhx|-mXa.Q",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610117565554,
+   "guid": "o+k>.L7=Za",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610117788345,
+   "guid": "D.aM>Dh6[U",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610117962726,
+   "guid": "I|,%</VA,t",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610118761150,
+   "guid": "j^r-[9*mH+",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610119143534,
+   "guid": "l2Wv3wUu$3",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610119392435,
+   "guid": "od}UCT^!c9",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610135176906,
+   "guid": "Q&`?G?FC/{",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610136517619,
+   "guid": "wQ*Y2LHl+2",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610136712606,
+   "guid": "DbNshk2]{_",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610137384731,
+   "guid": "Ig@L&VPhK?",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610141854992,
+   "guid": "k}ATFU`Ty*",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610142346428,
+   "guid": "N.,d7,I5,.",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610142429207,
+   "guid": "Q4~u_.?G+/",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610174560198,
+   "guid": "gpb+|lnt&H",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610174844177,
+   "guid": "H18cPA{6M^",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1610175047851,
+   "guid": "d=I{/v+DZ5",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610175357702,
+   "guid": "JLp4O<2U[+",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610176046862,
+   "guid": "o$tc=[L;A",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610191442517,
+   "guid": "ltq}Jg>_i@",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1610195670901,
+   "guid": "sX<YT:bh]2",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610196626382,
+   "guid": "c1;]$c@eMD",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610197457760,
+   "guid": "mfSw&mCa~l",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610198556037,
+   "guid": "GW|->BNH0y",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610201366254,
+   "guid": "ebhEx$e=bD",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610216900507,
+   "guid": "zfW(tEp!SP",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610217803550,
+   "guid": "xB0p56$)o.",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610218355323,
+   "guid": "pF<?c[P@5?",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610218568639,
+   "guid": "A;b4%97r):",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610218751650,
+   "guid": "juE}QVe5#p",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610222116300,
+   "guid": "o_7BG}8D@0",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610222216667,
+   "guid": "k7,FYjy`dj",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610224161135,
+   "guid": "eR{ab<ht#3",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610224976778,
+   "guid": "Cd53l}VlHh",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610225779013,
+   "guid": "Bw=u_UpR!T",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610225923845,
+   "guid": "yLnNcn]!#(",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610279551908,
+   "guid": "i=)yWH3$_3",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610280061441,
+   "guid": "g=b`Uq9JiK",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610282966503,
+   "guid": "Q>yFNuLPoP",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610283370412,
+   "guid": "w+9poY:h<p",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610286070618,
+   "guid": "F,Sd*UsW`J",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610286665815,
+   "guid": "q(|{rB]j1<",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610289592274,
+   "guid": "GC).3df|@s",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610290440451,
+   "guid": "Fk;:u4F1%#",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610290745125,
+   "guid": "cWh4DXmFFI",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610290981046,
+   "guid": "sUuFu;]V6D",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610303096197,
+   "guid": "jZUc*m21|`",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610304848530,
+   "guid": "yS|q;K_g,,",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610305107360,
+   "guid": "PY^O02z_F",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1614177506401,
+   "guid": "O`X$7wnwWs",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1614756392837,
+   "guid": "s<7HgbCu@4",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1615745423578,
+   "guid": "Ek!,#R<S~R",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617567534821,
+   "guid": "x_O7[SM}|M",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617567579169,
+   "guid": "zs[AnZ@6x}",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617831450859,
+   "guid": "xHg)*Oau*<",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617831527594,
+   "guid": "pT$JJ,Nuyk",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618694469990,
+   "guid": "rBKQv=%q[!",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618694683136,
+   "guid": "O{lt?Rq$A6",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618698979875,
+   "guid": "gVXm1j@O$C",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618700546655,
+   "guid": "s((iZ_`GkB",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618701132153,
+   "guid": "vmW-vKWn]~",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618736122971,
+   "guid": "czb?p?~6LU",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618736921693,
+   "guid": "Dd[5Wc2s6$",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618737605080,
+   "guid": "bm^-CMRJ%9",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618738025301,
+   "guid": "HtJ.%x3uTo",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1618738725758,
+   "guid": "pXTt^0V8qj",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618739617127,
+   "guid": "vCnP6|..;)",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618741314195,
+   "guid": "x_|B/&})o[",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618741707393,
+   "guid": "i$-!cY#rT^",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1618743807322,
+   "guid": "u^_EINhDOH",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1618745344993,
+   "guid": "%IL=,vtBN",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618745807577,
+   "guid": "syIY^xE|++",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618745987053,
+   "guid": "pT=0qaeJT",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618746111977,
+   "guid": "H3KW1WALIM",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618746164358,
+   "guid": "wWz]I}IB$(",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618749841607,
+   "guid": "tI>$;<&aUA",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618750526861,
+   "guid": "A2dG@8ro2f",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618751000634,
+   "guid": "MX0[Gg.>U7",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618751108151,
+   "guid": "Pn,1w8Zqc0",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1618751464544,
+   "guid": "w_#WlNzBi(",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618751887649,
+   "guid": "cetguO%MAw",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618752134598,
+   "guid": "EWC^s7z8gH",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618752793638,
+   "guid": "z|:(Xp9&{W",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1618752953044,
+   "guid": "Lt>lT=jt;y",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618753145208,
+   "guid": "mEGs(&ZXiN",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1618768871965,
+   "guid": "ONkO&do+XA",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618769914884,
+   "guid": "Jhx6[?qAvY",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618770266740,
+   "guid": "KPd{Beak(l",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618770393572,
+   "guid": "xZ.m|~t/#q",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618774791397,
+   "guid": "O7OcdpJzTu",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618775209117,
+   "guid": "OB}*Qz4NU}",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618775455339,
+   "guid": "C&bPyuybb>",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618776971927,
+   "guid": "cDx}:abokY",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618777319005,
+   "guid": "tvd6KT9j#o",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618777643554,
+   "guid": "jS3qw=c>LS",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618829710920,
+   "guid": "Ldq<Hdve5R",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618830417897,
+   "guid": "DEAsVpfhSW",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618832036528,
+   "guid": "I0VuSihqlU",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1618832238977,
+   "guid": "yCl@6c%JN2",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618832633756,
+   "guid": "k+K17vBwt]",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618834376859,
+   "guid": "-G][2XGe?",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618835186254,
+   "guid": "i*_#mi7l*U",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618842576682,
+   "guid": "b:2#$}[8G,",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618844820913,
+   "guid": "wT:Z!ui8ZV",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618846809544,
+   "guid": "GJI+i4cl<4",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618918301502,
+   "guid": "E&!L4r[@^R",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1618918962010,
+   "guid": "uPrt!T!=u/",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618920462593,
+   "guid": "G|]:dpI3<~",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618921042424,
+   "guid": "mlsa]%vy{%",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618921354377,
+   "guid": "i.Y&e!)l3d",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618921542824,
+   "guid": "e*Z)0#0?oY",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618926633056,
+   "guid": "NiQt$CI&n0",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1618926852731,
+   "guid": "`HF&K>~]B",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618927897574,
+   "guid": "EP$%3x?.lt",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618928676646,
+   "guid": "A[a^Oqkk:w",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618946705482,
+   "guid": "o[lyZ!3_4U",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618946894278,
+   "guid": ":!6t7;f+T",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618947262468,
+   "guid": "oy*cDAq]hr",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618947517759,
+   "guid": "i<!b1&m@cu",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618948710514,
+   "guid": "w8;Pqv:crG",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1618948892985,
+   "guid": "jba!-OGX0z",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618949320198,
+   "guid": "e<*/mbMey>",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618991067598,
+   "guid": "Hu#O?Z)T$W",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618991211994,
+   "guid": "E!6v5iQWpT",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618992614722,
+   "guid": "sqewZ/Q&F)",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618993181201,
+   "guid": "l|K~gGm^oE",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618993355054,
+   "guid": "FJ:ZW>+vj{",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1619975745808,
+   "guid": "ckUYKGWdrn",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620719703929,
+   "guid": "FCA}:wrv^Q",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620719887730,
+   "guid": "j`G`(xVBLq",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620720463852,
+   "guid": "J$?)<`ENnf",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620720954254,
+   "guid": "A`8u@m9hy-",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620721973543,
+   "guid": "P,(q~%dOJ}",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620730657950,
+   "guid": "IlA*;*,swl",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620730814531,
+   "guid": "J+c%l6&EoZ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1620730982906,
+   "guid": "dJ1?`e.-g6",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620741425527,
+   "guid": "A#80K1Kkbs",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1620742328588,
+   "guid": "L_!/B@l6]?",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1620743849677,
+   "guid": "Fgvhbjy$Hm",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620758917098,
+   "guid": "n*5-hMLwC_",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620760027658,
+   "guid": "b`w.YvV/E2",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620761616241,
+   "guid": "Di(]&rmK|A",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620761655393,
+   "guid": "rHV=`JikBT",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1620763622615,
+   "guid": "Lp)q6SRw[s",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620805975914,
+   "guid": "NIMj.Y/-pE",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1621029865307,
+   "guid": "Rg]#)(lsm]",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1621153989475,
+   "guid": "CVLkOJ}2n-",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1621154082733,
+   "guid": "gjon[VH4%^",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621176456516,
+   "guid": "jyRJJDyFS$",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1623522806620,
+   "guid": "O[X*.^A,):",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1624128165818,
+   "guid": "LTA+>S8^{!",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1624224876390,
+   "guid": "g/,8*<J~9X",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1624224975297,
+   "guid": "M~)(W!V|mv",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1624562623887,
+   "guid": "Q#3RcU{46i",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1624618774194,
+   "guid": "Gm-Ai[cBt~",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1624736786504,
+   "guid": "KI%E!:P6(?",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625213528102,
+   "guid": "zL)u(iDzFf",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625213567720,
+   "guid": "jx[5fqv+~(",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625409932398,
+   "guid": "tJ0|msPzW=",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625431575556,
+   "guid": "n(-S7cF2/i",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625482177599,
+   "guid": "Ly&SJ:_Wjw",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625482266250,
+   "guid": "es9u>6Rpg0",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625496261820,
+   "guid": "D5yEQ~Y5c!",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625496667235,
+   "guid": "DcbU@`s5sJ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625496913688,
+   "guid": "fjF|_b$?9D",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625497322537,
+   "guid": "ybP?e=]bCH",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625497871276,
+   "guid": "hr1Smz,yz/",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625516674381,
+   "guid": "K<DZn:[gPl",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625516771858,
+   "guid": "BISZeZ>VEz",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625518614288,
+   "guid": "C`.%1Rl!W~",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1626295769660,
+   "guid": "s1lV6x<*CL",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1626295896805,
+   "guid": "oTh*F/vN9{",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626645561919,
+   "guid": "vL_f,E8thQ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626723412737,
+   "guid": "oGeY|vGM4L",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626843672665,
+   "guid": "O/p,jD:p~I",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626875776319,
+   "guid": "eh^jnFcfT/",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626876236477,
+   "guid": "I3h.*OPXGG",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1627150666910,
+   "guid": "lS~&3lwu$e",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627200685727,
+   "guid": "Q6HBc%z^JV",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627369979429,
+   "guid": "Hw7@K$|)L%",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628001818026,
+   "guid": "ujSqay[Mv<",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628002748972,
+   "guid": "v-tB#yH&Df",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628065798553,
+   "guid": "DdDYsLbm[Q",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628082538750,
+   "guid": "fTs666Nj?>",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1628358192975,
+   "guid": "O,Ef8RFoL0",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628539734391,
+   "guid": "h]D1Qau:BO",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628541154370,
+   "guid": "svx?ilXbm1",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628541263577,
+   "guid": "JB`G[)2Syi",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1628541369598,
+   "guid": "t^QoqB;-m&",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628714655861,
+   "guid": "QYK_h$r:2z",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628714766798,
+   "guid": "N^yMOc)^8:",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628877029263,
+   "guid": "qjsus0n&$%",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629123115830,
+   "guid": "g9}RhZEs-v",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629376343590,
+   "guid": "IDxAKv{FqH",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1629548831855,
+   "guid": "Pu3*o3aj-`",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629976110991,
+   "guid": "n1wre5J4aM",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1630067930649,
+   "guid": "B:)oBIi`]7",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1630347648016,
+   "guid": "Dr,FtY.^^:",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1630526832483,
+   "guid": "t[}b!m7DX",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1630527287220,
+   "guid": "AOD@EPnV0V",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  }
+ ],
+ "notes": [
+  {
+   "noteId": 1604085891585,
+   "guid": "IQ&vy5I+Lk",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Von Ebner bezleri de saf seröz salgı yapan küçük tükürük bezleridir.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+   ]
+  },
+  {
+   "noteId": 1604088528094,
+   "guid": "AK*x.qpW2o",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "fields": {
+    "Text": {
+     "before": "Nöral krest kökenli yapılar:<div><br></div><div>{{c1::Melanosit}}</div><div>{{c2::Pia}} ve {{c3::araknoid}} mater</div><div>Kraniyal ve spinal {{c1::duyu ganglionları}}</div><div>{{c2::Schwann}} hücreleri</div><div>{{c3::Satellit}} hücreleri</div><div>{{c1::İris pupiller}} kası</div><div>{{c2::Parafoliküler C}} hücreleri</div>",
+     "after": "Nöral krest kökenli yapılar:<div><br></div><div>{{c1::Melanosit}}</div><div>{{c2::Pia}} ve {{c3::araknoid}} mater</div><div>Kraniyal ve spinal {{c1::duyu ganglionları}}</div><div>{{c2::Schwann}} hücreleri</div><div>{{c3::Satellit}} hücreleri</div><div>{{c2::Parafoliküler C}} hücreleri</div>"
+    },
+    "Extra": {
+     "before": "İris sfinkter ve dilatatör kasları optik kadeh ektoderminden gelişir.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün listedeki yanlış üye (iris pupiller kası nöroektoderm kökenli) doğrudan listeden çıkarıldı; gerekçe açıklaması silindi (kural 2, 6, 7)."
+   ]
+  },
+  {
+   "noteId": 1604090894848,
+   "guid": "zj03a!aQP2",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Kan yapımının prehepatik (mezoblastik) dönemi → {{c1::eritrositler}} yanında miyeloid hücreler de gelişir; dolaşımda çekirdekli dev {{c1::eritrositler}} bulunur",
+     "after": "Kan yapımının prehepatik dönemi → {{c1::eritrositler}} yanında miyeloid hücreler de gelişir; dolaşımda çekirdekli dev {{c1::eritrositler}} bulunur"
+    }
+   },
+   "actions": [
+    "2. tur: Sonradan eklenen eş ad parantezi kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1604092085701,
+   "guid": "FQ9J.sB3V`",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "İyon kanalı aracılı tat iletimi → {{c1::iyonotropik}}<div><br></div><div>Na+ → {{c1::tuzlu tat}} (amiloride duyarlı bileşende ENaC)</div><div>H+ → {{c1::ekşi tat}} (OTOP1 proton kanalı)</div>",
+     "after": "Ekşi ve tuzlu tat → {{c1::iyonotropik}} kanallar<div><br></div><div>Na+ → {{c1::tuzlu tat}} (ENaC)</div><div>H+ → {{c1::ekşi tat}}</div>"
+    },
+    "Extra": {
+     "before": "ENaC için doğrudan genetik kanıt farede amiloride duyarlı sodyum tadına aittir; insanın tüm tuz tadı yollarına genellenmemelidir.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Ana metne eklenen mekanizma parantezleri kısaltıldı, özgün ENaC bilgisi korundu; kaynak tartışması Extra'dan silindi (kural 2, 3, 6).",
+    "2. tur: Başlık özgün kapsamına döndürüldü; 'iyon kanalı aracılı' ifadesi cevabı ön yüzde ele veriyordu (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1604092393449,
+   "guid": "Kt|;W(7A#m",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Vagus → gastrin salgılayan G hücrelerine postganglionik nörondan {{c1::gastrin salgılatıcı peptid (GRP)}} salgılar",
+     "after": "Vagus → gastrin salgılayan G hücrelerine {{c1::gastrin salgılatıcı peptid (GRP)}} salgılar"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen mekanizma ayrıntısı kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1604092879489,
+   "guid": "O4?&eS6s-`",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "R faktörü (haptokorrin) → {{c1::tükürükle}} salgılanır; B12 vitaminine {{c1::midede}} bağlanır",
+     "after": "R faktörü → {{c1::tükürükle}} salgılanır; B12 vitaminine {{c1::midede}} bağlanır"
+    }
+   },
+   "actions": [
+    "2. tur: Sonradan eklenen eş ad parantezi kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1604129551042,
+   "guid": "r0++cWP0-N",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Sağ kalbe venöz dönüşün artmasıyla pulmoner kapak geç kapanır; S2 çiftleşir.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+   ]
+  },
+  {
+   "noteId": 1604130308351,
+   "guid": "h}@<0^)QCB",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Poiseuille denklemine göre vasküler direnç (R) = {{c1::(8 · viskozite (η) · damar uzunluğu (L)) / (π · r<sup>4</sup>)}}",
+     "after": "Vasküler direnç (R) = {{c1::(8 · viskozite (η) · damar uzunluğu (L)) / (π · r<sup>4</sup>)}}"
+    },
+    "Extra": {
+     "before": "R vasküler direnci, η kan viskozitesini, L damar uzunluğunu, r damar yarıçapını temsil eder.",
+     "after": "R → direnç"
+    }
+   },
+   "actions": [
+    "Genişletilmiş arka yüz özgün kısa içeriğe indirildi (kural 2).",
+    "2. tur: Sonradan eklenen eponim kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1604130656359,
+   "guid": "z=kC4)V:_*",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Barorefleksin CVLM ara durağındaki GABAerjik nöronlar RVLM üzerindeki sempatik uyarıyı inhibe eder; sempatik tonus azalır.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+   ]
+  },
+  {
+   "noteId": 1604130778095,
+   "guid": "uZ..=W$Zj1",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Barorefleksin CVLM ara durağındaki GABAerjik nöronlar RVLM üzerindeki sempatik uyarıyı inhibe eder; sempatik tonus azalır.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+   ]
+  },
+  {
+   "noteId": 1604130826422,
+   "guid": "zZWy.YeKuy",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Barorefleksin CVLM ara durağındaki GABAerjik nöronlar RVLM üzerindeki sempatik uyarıyı inhibe eder; sempatik tonus azalır.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+   ]
+  },
+  {
+   "noteId": 1604130928109,
+   "guid": "jVjH~VN>S{",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Derin inspiryumda artan venöz dönüşün kalp hızını yükseltmesine katkıda bulunan refleks → {{c1::Bainbridge refleksi}}",
+     "after": "Derin inspiryumda kalp hızının %10 artmasına katkıda bulunan refleks → {{c1::Bainbridge refleksi}}"
+    }
+   },
+   "actions": [
+    "2. tur: Sonradan eklenen mekanizma kaldırıldı; özgün %10 bilgisi geri getirildi (kural 3, 4)."
+   ]
+  },
+  {
+   "noteId": 1604141871630,
+   "guid": "H]$b08F>48",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Vestibül girişi keratinize çok katlı yassı epitelle döşelidir.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+   ]
+  },
+  {
+   "noteId": 1604142686067,
+   "guid": "b84Q#FtxYk",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Pulmoner konjesyon ve interstisyel ödemde uyarılır.",
+     "after": "Pulmoner konjesyon varlığında uyarılır (yükseklik, egzersiz, kalp yetmezliği, hiperventilasyon)."
+    }
+   },
+   "actions": [
+    "2. tur: Arka yüze eklenen ödem bilgisi çıkarıldı; yeniden yazımda kaybolan özgün örnekler geri getirildi (kural 2, 4)."
+   ]
+  },
+  {
+   "noteId": 1604143049764,
+   "guid": "vJTUTg$Gp=",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "FEF<sub>25–75</sub><div><br></div><div>Akciğerin elastik geri çekilmesine {{c1::bağlıdır}}.</div><div><br></div><div>Klinik ölçüm değeri, FVC ölçümünün geçerliliğine ve ekspiratuvar efora {{c1::güçlü biçimde bağımlıdır}}.</div>",
+     "after": "FEF<sub>25–75</sub><div><br></div><div>Akciğerin elastik geri çekilmesine {{c1::bağlıdır}}.</div><div><br></div><div>Efora {{c1::bağımlı değildir}}.</div>"
+    },
+    "Extra": {
+     "before": "ATS/ERS 2019 standardı, FEF25–75 yorumunda FVC ölçümünün geçerliliğini ve ekspiratuvar eforu dikkate almayı ister. Elastik geri çekilmenin fizyolojik rolü, klinik ölçümün efordan bağımsız olduğu anlamına gelmez.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Kılavuz (ATS/ERS 2019) temelli klinik yorum ve kaynak açıklaması kaldırıldı; özgün fizyolojik hüküm geri yazıldı (kural 1, 2, 5, 6)."
+   ]
+  },
+  {
+   "noteId": 1604143415995,
+   "guid": "gI|12|V,(/",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Lokal anestezik blok sırası uygulama koşullarına göre değişebilir; klasik A-B-C eşlemesi mutlak değildir.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+   ]
+  },
+  {
+   "noteId": 1604143490436,
+   "guid": "KdG0k+Cp.h",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Kan-beyin bariyerine perivasküler ayaklarıyla katılan gri cevher astrositi → {{c1::protoplazmik astrosit}}",
+     "after": "Kan-beyin bariyerine katılan astrosit → {{c1::protoplazmik astrosit}}"
+    }
+   },
+   "actions": [
+    "2. tur: Sonradan eklenen mekanizma ve cevabı ele veren 'gri cevher' niteleyicisi kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1604145342965,
+   "guid": "e0O{j(Bg*|",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "İntraglomerüler mezangiyal hücrelerin bazal membran artıklarını temizleyen temel işlevi → {{c1::fagositoz}} yapmaktır",
+     "after": "İntraglomerüler mezangiyal hücreler → {{c1::fagositoz}} yapar"
+    }
+   },
+   "actions": [
+    "2. tur: Sonradan eklenen işlev açıklaması kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1604145591708,
+   "guid": "IV;pee#f>_",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Safra tuzları, oksalat, ürat ve katekolaminler gibi organik maddeler nefronda aktif olarak → {{c1::proksimal tübül lümenine}} salgılanır",
+     "after": "Safra tuzları, oksalat, ürat ve katekolaminler → {{c1::proksimal tübül lümenine}} salgılanır"
+    }
+   },
+   "actions": [
+    "2. tur: Sonradan eklenen yan bilgi kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1606850849932,
+   "guid": "HmG{MJ$O]Q",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Parotis bezi ektoderm kökenlidir.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "2. tur: Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+   ]
+  },
+  {
+   "noteId": 1606893857985,
+   "guid": "Q)2D)+^*nN",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "fields": {
+    "Text": {
+     "before": "Sinir terminalinde transmitter salınımı<div><br></div><div>{{c1::<b>N tipi Ca</b>}} kanalı aktivasyonu</div><div><br></div><div>Hücre içi {{c1::Ca}} artışı</div><div><br></div><div>{{c1::Ca}} {{c2::kalmodulin}}e bağlanır</div><div><br></div><div>{{c2::Kalmodulin}} {{c3::protein kinazı (CaMKII)}} aktive eder</div><div><br></div><div>Aktive olan protein kinaz {{c3::<b>sinapsin I</b>}} proteinini fosforiller → vezikülleri {{c1::membrana yaklaştırır}}</div><div><br></div><div>Ca → {{c2::<b>sinaptotagmin</b>}}e bağlanır → bu kompleks {{c3::<b>sintaksin</b>}} ve {{c3::<b>sinaptobrevin</b>}} (SNARE proteinleri) aracılığıyla füzyonu tetikler</div><div><br></div><div><b>Ekzositoz</b> olur</div>",
+     "after": "Sinir terminalinde transmitter salınımı<div><br></div><div>{{c1::<b>N tipi Ca</b>}} kanalı aktivasyonu</div><div><br></div><div>Hücre içi {{c1::Ca}} artışı</div><div><br></div><div>{{c1::Ca}} {{c2::kalmodulin}}e bağlanır</div><div><br></div><div>{{c2::Kalmodulin}} {{c3::protein kinazı (CaMKII)}} aktive eder</div><div><br></div><div>Aktive olan protein kinaz {{c3::<b>sinapsin I</b>}} proteinini fosforiller → vezikülleri {{c1::membrana yaklaştırır}}</div><div><br></div><div>Ca → {{c2::<b>sinaptotagmin</b>}}e bağlanır → bu kompleks {{c3::<b>sintaksin</b>}} ve {{c3::<b>sinaptobrevin</b>}} aracılığıyla füzyonu tetikler</div><div><br></div><div><b>Ekzositoz</b> olur</div>"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen parantez kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1606911244717,
+   "guid": "fg+om(_%]y",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Etki fosforilasyonla değil, aktin-miyozin etkileşimiyle olur.",
+     "after": "Aktin-miyozin etkileşimiyle."
+    }
+   },
+   "actions": [
+    "Özgün yanlış 'fosforilleyerek' ifadesi kısa doğru ifadeyle değiştirildi; gerekçe cümlesi kaldırıldı (kural 6, 7)."
+   ]
+  },
+  {
+   "noteId": 1607152161300,
+   "guid": "Fj>2otnNr/",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "fields": {
+    "Text": {
+     "before": "Tat reseptörleri ve seçilmiş anatomik iletim örnekleri (tat kaliteleri tek bir dil bölgesine özgü değildir)<div><br></div><div>Tatlı:</div><div>G protein kenetli {{c1::T1R2}} ve {{c1::T1R3}} / gustdusin bağlantılı /</div><div>dilin {{c5::{{c1::ön}}::ilişkili yanıt arka yüzde}} kısmı, {{c5::{{c1::fungiform}}::ilişkili yanıt arka yüzde}} papilla /</div><div>sinir: {{c5::{{c1::VII. kraniyal sinir, korda timpani}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div>Acı:</div><div>G protein kenetli {{c2::T2R}} / gustdusin bağlantılı, bazıları {{c2::K}} kanal blokajı yapar /</div><div>dilin {{c3::{{c4::{{c2::arkası}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}}, {{c3::{{c4::{{c2::sirkumvallat}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}} ve {{c3::{{c4::{{c2::foliat}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}} papillalar /</div><div>sinir: {{c3::{{c4::{{c2::IX. kraniyal sinir}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div>Umami:</div><div>G protein kenetli; Ganong: {{c3::mGlu4}}, diğerleri: {{c3::T1R1-T1R3}} / gustdusin bağlantılı /</div><div>dilin {{c2::{{c4::{{c3::arkası}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}}, {{c2::{{c4::{{c3::sirkumvallat}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}} ve {{c2::{{c4::{{c3::foliat}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}} papillalar / sinir: {{c2::{{c4::{{c3::IX. kraniyal sinir}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div>Ekşi:</div><div>{{c5::{{c4::İyonotropik}}::ilişkili yanıt arka yüzde}} reseptör, H+ iyonu geçirgen {{c4::OTOP1}} kanalı /</div><div>dilin {{c2::{{c3::{{c4::arkası}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}}, {{c2::{{c3::{{c4::sirkumvallat}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}} ve {{c2::{{c3::{{c4::foliat}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}} papillalar / sinir: {{c2::{{c3::{{c4::IX. kraniyal sinir}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div>Tuzlu:</div><div>{{c4::{{c5::İyonotropik}}::ilişkili yanıt arka yüzde}} reseptör, Na+ iyonu geçirgen {{c5::ENaC}} kanalı /</div><div>dilin {{c1::{{c5::ön}}::ilişkili yanıt arka yüzde}} kısmı, {{c1::{{c5::fungiform}}::ilişkili yanıt arka yüzde}} papilla /</div><div>sinir: {{c1::{{c5::VII. kraniyal sinir, korda timpani}}::ilişkili yanıt arka yüzde}}</div>",
+     "after": "Tat reseptörleri<div><br></div><div>Tatlı:</div><div>G protein kenetli {{c1::T1R2}} ve {{c1::T1R3}} / gustdusin bağlantılı /</div><div>dilin {{c5::{{c1::ön}}::ilişkili yanıt arka yüzde}} kısmı, {{c5::{{c1::fungiform}}::ilişkili yanıt arka yüzde}} papilla /</div><div>sinir: {{c5::{{c1::VII. kraniyal sinir, korda timpani}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div>Acı:</div><div>G protein kenetli {{c2::T2R}} / gustdusin bağlantılı, bazıları {{c2::K}} kanal blokajı yapar /</div><div>dilin {{c3::{{c4::{{c2::arkası}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}}, {{c3::{{c4::{{c2::sirkumvallat}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}} ve {{c3::{{c4::{{c2::foliat}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}} papillalar /</div><div>sinir: {{c3::{{c4::{{c2::IX. kraniyal sinir}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div>Umami:</div><div>G protein kenetli; Ganong: {{c3::mGlu4}}, diğerleri: {{c3::T1R1-T1R3}} / gustdusin bağlantılı /</div><div>dilin {{c2::{{c4::{{c3::arkası}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}}, {{c2::{{c4::{{c3::sirkumvallat}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}} ve {{c2::{{c4::{{c3::foliat}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}} papillalar / sinir: {{c2::{{c4::{{c3::IX. kraniyal sinir}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div>Ekşi:</div><div>{{c5::{{c4::İyonotropik}}::ilişkili yanıt arka yüzde}} reseptör, H+ iyonu geçirgen {{c4::OTOP1}} kanalı /</div><div>dilin {{c2::{{c3::{{c4::arkası}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}}, {{c2::{{c3::{{c4::sirkumvallat}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}} ve {{c2::{{c3::{{c4::foliat}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}} papillalar / sinir: {{c2::{{c3::{{c4::IX. kraniyal sinir}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div>Tuzlu:</div><div>{{c4::{{c5::İyonotropik}}::ilişkili yanıt arka yüzde}} reseptör, Na+ iyonu geçirgen {{c5::ENaC}} kanalı /</div><div>dilin {{c1::{{c5::ön}}::ilişkili yanıt arka yüzde}} kısmı, {{c1::{{c5::fungiform}}::ilişkili yanıt arka yüzde}} papilla /</div><div>sinir: {{c1::{{c5::VII. kraniyal sinir, korda timpani}}::ilişkili yanıt arka yüzde}}</div>"
+    },
+    "Extra": {
+     "before": "<img src=\"paste-94353404adf40de101213b09e2904ed861de185c.jpg\"><br><img src=\"paste-b2e17aeca026cd06a9537e1d58ab40422a8e330a.jpg\"><br>Beş tat da dilin bütün bölgelerinde algılanır; eski kaynaklarda ekşi tat için ENaC geçer.",
+     "after": "<img src=\"paste-94353404adf40de101213b09e2904ed861de185c.jpg\"><br><img src=\"paste-b2e17aeca026cd06a9537e1d58ab40422a8e330a.jpg\">"
+    }
+   },
+   "actions": [
+    "Başlığa eklenen açıklayıcı parantez ve arka yüzdeki kaynak/karşılaştırma cümlesi kaldırıldı; görseller korundu (kural 1, 3, 6).",
+    "2. tur: Başlığa eklenen çekince ifadesi kaldırıldı (kural 3, 6)."
+   ]
+  },
+  {
+   "noteId": 1610049823423,
+   "guid": "Okx=%L!1;y",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Text": {
+     "before": "Ara mezoderm<br>Kraniyalden kaudale:<div><br></div><div>{{c1::Pro}}nefroz → {{c2::bir şey yapmaz, geriler}}</div><div>{{c1::Mezo}}nefroz → {{c2::erkekte genital kanalları (Wolff)}} yapar</div><div>{{c1::Meta}}nefroz → {{c2::kalıcı böbrekleri}} yapar</div>",
+     "after": "Ara mezoderm<br>Kraniyalden kaudale:<div><br></div><div>{{c1::Pro}}nefroz → {{c2::bir şey yapmaz ('kandırmacalı')}}</div><div>{{c1::Mezo}}nefroz → {{c2::erkekte genital kanalları (Wolff)}} yapar</div><div>{{c1::Meta}}nefroz → {{c2::kalıcı böbrekleri}} yapar</div>"
+    }
+   },
+   "actions": [
+    "2. tur: Sonradan eklenen 'geriler' çıkarıldı; özgün ezber ipucu geri getirildi (kural 3, 8)."
+   ]
+  },
+  {
+   "noteId": 1610052595484,
+   "guid": "n#~m,qouOZ",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Histamini eozinofillerin histaminaz enzimi yıkar.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+   ]
+  },
+  {
+   "noteId": 1610089129813,
+   "guid": "M;t~P!2b4b",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "<b>Grelin</b> salgılayan hücre:<div><br></div><div>{{c1::Oksintik bezlerdeki P/D1 (X/A benzeri)}} hücreler</div>",
+     "after": "<b>Grelin</b> salgılayan hücre:<div><br></div><div>{{c1::Oksintik bezlerdeki P/D1}} hücreler</div>"
+    },
+    "Extra": {
+     "before": "Eski kaynaklarda parietal (oksintik) hücre olarak geçer.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "2. tur: Düzeltme kısa tutuldu, eklenen eş ad parantezi kaldırıldı (kural 3, 7).",
+    "2. tur: Özgün kartta olmayan kaynak karşılaştırması arka yüzden kaldırıldı (kural 2, 6)."
+   ]
+  },
+  {
+   "noteId": 1610117565554,
+   "guid": "o+k>.L7=Za",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Notokorddan nöral tüpün ventraline (taban plağı) giden indükleyici sinyal:<div><br></div><div>{{c1::Shh}}</div>",
+     "after": "Notokorddan nöral tüpün ventraline giden indükleyici sinyal:<div><br></div><div>{{c1::Shh}}</div>"
+    },
+    "Extra": {
+     "before": "Nöral plağın ilk indüksiyonunu BMP4'ü baskılayan nogin, kordin ve follistatin sağlar.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2).",
+    "2. tur: Sonradan eklenen açıklama parantezi kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1610174844177,
+   "guid": "H18cPA{6M^",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Diğer tübül bölümleri tek katlı kübik (toplayıcı kanallar kübik–prizmatik)",
+     "after": "Diğer tübül bölümleri tek katlı kübik"
+    }
+   },
+   "actions": [
+    "Arka yüze eklenen parantez kaldırıldı, özgün kısa içerik korundu (kural 2, 3)."
+   ]
+  },
+  {
+   "noteId": 1610195670901,
+   "guid": "sX<YT:bh]2",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Ehlers-Danlos sendromu tip 4 (vasküler tip):<div><br></div><div>Tip {{c1::3}} kollajen defekti</div>",
+     "after": "Ehlers-Danlos sendromu tip 4:<div><br></div><div>Tip {{c1::3}} kollajen defekti</div>"
+    }
+   },
+   "actions": [
+    "2. tur: Sonradan eklenen eş ad parantezi kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1615745423578,
+   "guid": "Ek!,#R<S~R",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Spektrini zardaki band 3 proteinine ankirin bağlar.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+   ]
+  },
+  {
+   "noteId": 1617567579169,
+   "guid": "zs[AnZ@6x}",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Şişede plazmayla izoozmotiktir; glukoz metabolize olunca vücutta hipotonik sıvı gibi davranır.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+   ]
+  },
+  {
+   "noteId": 1618700546655,
+   "guid": "s((iZ_`GkB",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "İnsan term plasentasının bazal membranında tip IV kollajen ve laminin bulunur. Tip V kollajenin stromal matrikste bulunması, bazal membranın ana kollajenini tip V yapmaz.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2). Tip IV düzeltmesi ön yüzde korundu (kural 6, 7)."
+   ]
+  },
+  {
+   "noteId": 1618743807322,
+   "guid": "u^_EINhDOH",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Nöroaktif metaboliti allopregnanolon olan hormon: {{c1::Progesteron}}",
+     "after": "Premenstrüel sendromla ilişkili hormon:<div><br></div><div>{{c1::Progesteron}}</div>"
+    },
+    "Extra": {
+     "before": "Allopregnanolon GABA-A reseptörünün pozitif allosterik modülatörüdür. PMDD’de steroid değişimlerine duyarlılık önemlidir; bu ilişki tüm premenstrüel sendrom için tek neden açıklaması değildir.",
+     "after": "Metaboliti SSS'de GABA-A reseptörüne bağlanır."
+    }
+   },
+   "actions": [
+    "Arka yüz özgün GABA-A bilgisine indirildi; PMDD yorumu kaldırıldı (kural 2, 6).",
+    "2. tur: Özgün PMS sorusu geri getirildi, eklenen allopregnanolon bilgisi çıkarıldı (kural 3, 7).",
+    "2. tur: Arka yüz özgün kısa GABA-A bilgisine döndürüldü; doğrudan bağlanmanın metabolit üzerinden olduğu kısa niteleyiciyle korundu (kural 2, 7)."
+   ]
+  },
+  {
+   "noteId": 1618745987053,
+   "guid": "pT=0qaeJT",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Kemirgenlerde kopülasyon tıkacı oluşumunu sağlayan enzim:<div><br></div><div>{{c1::Vezikülaz}}</div><div><br></div><div>{{c1::Koagülasyon bezinde (anterior prostat)}} üretilir</div>",
+     "after": "Kemirgenlerde kopülasyon tıkacı oluşumunu sağlayan enzim:<div><br></div><div>{{c1::Vezikülaz}}</div><div><br></div><div>{{c1::Koagülasyon bezinde}} üretilir</div>"
+    },
+    "Extra": {
+     "before": "Kemirgenlerde koagülasyon bezinden (prostat ön lobu) salgılanır; substratı vesicula seminalis proteinleridir.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2).",
+    "2. tur: Sonradan eklenen eş ad parantezi kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1618750526861,
+   "guid": "A2dG@8ro2f",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Nodal, TGF-β ailesinin üyesidir.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+   ]
+  },
+  {
+   "noteId": 1618752793638,
+   "guid": "z|:(Xp9&{W",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Arter<div>Kemik</div><div>Kıkırdak</div><div>Kas</div><div>Sinir</div><div><br></div><div>gelişir</div>",
+     "after": "Arter<div>Kemik</div><div>Kıkırdak</div><div>Sinir</div><div><br></div><div>gelişir</div>"
+    }
+   },
+   "actions": [
+    "Özgün listeye eklenen 'Kas' üyesi kaldırıldı (kural 4)."
+   ]
+  },
+  {
+   "noteId": 1618775209117,
+   "guid": "OB}*Qz4NU}",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Güncel çalışmalarda ATP salınımından CALHM1/CALHM3 kanalları sorumlu tutulur.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2). CALHM1/CALHM3 düzeltmesi ana metinde korundu (kural 1, 7)."
+   ]
+  },
+  {
+   "noteId": 1618776971927,
+   "guid": "cDx}:abokY",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Yağ, protein ve karbonhidratla salınımı uyarılan, bağırsak K hücrelerinden salgılanan hormon:<div><br></div><div>{{c1::<b>GIP</b> (glukoza bağımlı insülinotropik peptid)}}</div>",
+     "after": "Yağ, protein ve karbonhidratla salınımı uyarılan tek GİS hormonu:<div><br></div><div>{{c1::<b>GIP</b> (glukoza bağımlı insülinotropik peptid)}}</div>"
+    }
+   },
+   "actions": [
+    "2. tur: Sonradan eklenen hücre bilgisi kaldırıldı; özgün 'tek GİS hormonu' ifadesi geri getirildi (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1618829710920,
+   "guid": "Ldq<Hdve5R",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "<b>Baroreseptörlerin </b>olduğu bölgelerde (karotis sinüsü):<div><br></div><div><b>Tunika intima</b>: {{c1::kalınlaşmış}}</div><div><br></div><div><b>Tunika media</b>: {{c1::incelmiştir}}</div><div><br></div><div><b>Duyusal sinir sonlanmaları:</b> tunika {{c1::adventisya}}da</div>",
+     "after": "<b>Baroreseptörlerin </b>olduğu bölgelerde:<div><br></div><div><b>Tunika intima</b>: {{c1::kalınlaşmış}}</div><div><br></div><div><b>Tunika media</b>: {{c1::incelmiştir}}</div><div><br></div><div><b>Duyusal sinir sonlanmaları:</b> tunika {{c1::adventisya}}da</div>"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen örnek parantezi kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1618832238977,
+   "guid": "yCl@6c%JN2",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Payda, arteriyel ve mikst venöz (pulmoner arter) kanın O2 içerikleri farkıdır.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+   ]
+  },
+  {
+   "noteId": 1618991067598,
+   "guid": "Hu#O?Z)T$W",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Klasik bilgiye göre hipergliseminin GFR'yi artırma mekanizması:<div><br></div><div>{{c1::Filtrasyon katsayısını (Kf) artırır}}</div>",
+     "after": "Hipergliseminin GFR'yi artırma mekanizması:<div><br></div><div>{{c1::Filtrasyon katsayısını (Kf) artırır}}</div>"
+    },
+    "Extra": {
+     "before": "Güncel çalışmalarda ana mekanizma artmış Na-glukoz geri emilimine bağlı tübüloglomerüler geri bildirimin zayıflamasıdır.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Güncel çalışma yorumu ve 'klasik bilgiye göre' çekincesi kaldırıldı (kural 2, 5, 6)."
+   ]
+  },
+  {
+   "noteId": 1618991211994,
+   "guid": "E!6v5iQWpT",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "RPA: renal plazma akımı",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+   ]
+  },
+  {
+   "noteId": 1620719887730,
+   "guid": "j`G`(xVBLq",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Proteinlerin organellere yönlendirilmesi:<div><br></div><div><b>N-terminal (hidrofobik) sinyal peptidi</b> → {{c1::ER}}</div><div><br></div><div><b>Karboksi terminal sinyal dizisi</b> → {{c1::ER lümeni}}</div><div><br></div><div><b>Amino terminal (amfipatik) dizi</b> → {{c1::mitokondri matriksi}}</div><div><br></div><div><b>Di-asidik diziler</b> → {{c1::Golgi membranı}}</div>",
+     "after": "Proteinlerin organellere yönlendirilmesi:<div><br></div><div><b>N-terminal sinyal peptidi</b> → {{c1::ER}}</div><div><br></div><div><b>Karboksi terminal sinyal dizisi</b> → {{c1::ER lümeni}}</div><div><br></div><div><b>Amino terminal dizi</b> → {{c1::mitokondri matriksi}}</div><div><br></div><div><b>Di-asidik diziler</b> → {{c1::Golgi membranı}}</div>"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen özellik parantezleri kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1620742328588,
+   "guid": "L_!/B@l6]?",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Kalsiyum fosfatın çökmesini önler, minenin remineralizasyonunu düzenler.",
+     "after": "Kalsiyum fosfatın çökmesini önler."
+    }
+   },
+   "actions": [
+    "Özgün yanlış 'çökeltir' kısa doğru ifadeyle tutuldu; eklenen remineralizasyon bilgisi kaldırıldı (kural 2, 7)."
+   ]
+  },
+  {
+   "noteId": 1620743849677,
+   "guid": "Fgvhbjy$Hm",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Text": {
+     "before": "<b>Safra kesesi</b>;<br><br>Safrada konsantrasyonunu artırır →<div>{{c1::K}} ve {{c1::Ca}} (su emilimiyle yoğunlaşır)<br><br>Safradan →<br>{{c2::Na}}, {{c2::Cl}}, HCO3 absorbe eder</div>",
+     "after": "<b>Safra kesesi</b>;<br><br>Safrada konsantrasyonunu artırır →<div>{{c1::K}} ve {{c1::Ca}}<br><br>Safradan →<br>{{c2::Na}}, {{c2::Cl}}, HCO3 absorbe eder</div>"
+    }
+   },
+   "actions": [
+    "Düzeltmenin gerekçe parantezi kaldırıldı, kısa düzeltme korundu (kural 6, 7)."
+   ]
+  },
+  {
+   "noteId": 1623522806620,
+   "guid": "O[X*.^A,):",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Kan-sinir bariyerine endonöryal mikrodamar endotelinin sıkı bağlantıları da katkıda bulunur.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+   ]
+  },
+  {
+   "noteId": 1625213528102,
+   "guid": "zL)u(iDzFf",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Langman'da kloakal membranın yırtılması 7. haftanın sonudur.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2). Kaynak (Langman) atfı içeriyordu (kural 1)."
+   ]
+  }
+ ],
+ "noteRowsBefore": [
+  [
+   1604085891585,
+   "IQ&vy5I+Lk",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Büyük tükürük bezleri arasında tek saf seröz olan → {{c1::parotis}}\u001fVon Ebner bezleri de saf seröz salgı yapan küçük tükürük bezleridir.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Büyük tükürük bezleri arasında tek saf seröz olan → {{c1::parotis}}",
+   3079035468,
+   0,
+   ""
+  ],
+  [
+   1604088528094,
+   "AK*x.qpW2o",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Nöral krest kökenli yapılar:<div><br></div><div>{{c1::Melanosit}}</div><div>{{c2::Pia}} ve {{c3::araknoid}} mater</div><div>Kraniyal ve spinal {{c1::duyu ganglionları}}</div><div>{{c2::Schwann}} hücreleri</div><div>{{c3::Satellit}} hücreleri</div><div>{{c1::İris pupiller}} kası</div><div>{{c2::Parafoliküler C}} hücreleri</div>\u001fİris sfinkter ve dilatatör kasları optik kadeh ektoderminden gelişir.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Nöral krest kökenli yapılar:{{c1::Melanosit}}{{c2::Pia}} ve {{c3::araknoid}} materKraniyal ve spinal {{c1::duyu ganglionları}}{{c2::Schwann}} hücreleri{{c3::Satellit}} hücreleri{{c1::İris pupiller}} kası{{c2::Parafoliküler C}} hücreleri",
+   1270473992,
+   0,
+   ""
+  ],
+  [
+   1604090894848,
+   "zj03a!aQP2",
+   1566160514431,
+   1791546394,
+   -1,
+   "",
+   "Kan yapımının prehepatik (mezoblastik) dönemi → {{c1::eritrositler}} yanında miyeloid hücreler de gelişir; dolaşımda çekirdekli dev {{c1::eritrositler}} bulunur\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Kan yapımının prehepatik (mezoblastik) dönemi → {{c1::eritrositler}} yanında miyeloid hücreler de gelişir; dolaşımda çekirdekli dev {{c1::eritrositler}} bulunur",
+   2429092423,
+   0,
+   ""
+  ],
+  [
+   1604092085701,
+   "FQ9J.sB3V`",
+   1566160514431,
+   1791546394,
+   -1,
+   "",
+   "İyon kanalı aracılı tat iletimi → {{c1::iyonotropik}}<div><br></div><div>Na+ → {{c1::tuzlu tat}} (amiloride duyarlı bileşende ENaC)</div><div>H+ → {{c1::ekşi tat}} (OTOP1 proton kanalı)</div>\u001fENaC için doğrudan genetik kanıt farede amiloride duyarlı sodyum tadına aittir; insanın tüm tuz tadı yollarına genellenmemelidir.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "İyon kanalı aracılı tat iletimi → {{c1::iyonotropik}}Na+ → {{c1::tuzlu tat}} (amiloride duyarlı bileşende ENaC)H+ → {{c1::ekşi tat}} (OTOP1 proton kanalı)",
+   1239026012,
+   0,
+   ""
+  ],
+  [
+   1604092393449,
+   "Kt|;W(7A#m",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Vagus → gastrin salgılayan G hücrelerine postganglionik nörondan {{c1::gastrin salgılatıcı peptid (GRP)}} salgılar\u001fVagus G hücrelerini doğrudan ACh ile değil GRP ile uyarır.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Vagus → gastrin salgılayan G hücrelerine postganglionik nörondan {{c1::gastrin salgılatıcı peptid (GRP)}} salgılar",
+   1496356022,
+   0,
+   ""
+  ],
+  [
+   1604092879489,
+   "O4?&eS6s-`",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "R faktörü (haptokorrin) → {{c1::tükürükle}} salgılanır; B12 vitaminine {{c1::midede}} bağlanır\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "R faktörü (haptokorrin) → {{c1::tükürükle}} salgılanır; B12 vitaminine {{c1::midede}} bağlanır",
+   3527812546,
+   0,
+   ""
+  ],
+  [
+   1604129551042,
+   "r0++cWP0-N",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Derin inspiryumda {{c1::pulmoner kapağın}} kapanması gecikir\u001fSağ kalbe venöz dönüşün artmasıyla pulmoner kapak geç kapanır; S2 çiftleşir.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Derin inspiryumda {{c1::pulmoner kapağın}} kapanması gecikir",
+   1450747198,
+   0,
+   ""
+  ],
+  [
+   1604130308351,
+   "h}@<0^)QCB",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Poiseuille denklemine göre vasküler direnç (R) = {{c1::(8 · viskozite (η) · damar uzunluğu (L)) / (π · r<sup>4</sup>)}}\u001fR vasküler direnci, η kan viskozitesini, L damar uzunluğunu, r damar yarıçapını temsil eder.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Poiseuille denklemine göre vasküler direnç (R) = {{c1::(8 · viskozite (η) · damar uzunluğu (L)) / (π · r4)}}",
+   2725026661,
+   0,
+   ""
+  ],
+  [
+   1604130656359,
+   "z=kC4)V:_*",
+   1566160514431,
+   1791540120,
+   -1,
+   "",
+   "Bulber vazomotor alanlar:<div>C1 (RVLM) → {{c1::vazokonstriktör}} alan</div><div>CVLM → {{c2::vazodilatatör}} alan</div>\u001fBarorefleksin CVLM ara durağındaki GABAerjik nöronlar RVLM üzerindeki sempatik uyarıyı inhibe eder; sempatik tonus azalır.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Bulber vazomotor alanlar:C1 (RVLM) → {{c1::vazokonstriktör}} alanCVLM → {{c2::vazodilatatör}} alan",
+   741143368,
+   0,
+   ""
+  ],
+  [
+   1604130778095,
+   "uZ..=W$Zj1",
+   1566160514431,
+   1791540120,
+   -1,
+   "",
+   "Baroreseptör aferentleri (9. ve 10. kraniyal sinirler) → nucleus tractus solitarii → <b>{{c1::glutamat}}</b> salınımı → {{c2::kaudal ventrolateral medulla (CVLM)}}\u001fBarorefleksin CVLM ara durağındaki GABAerjik nöronlar RVLM üzerindeki sempatik uyarıyı inhibe eder; sempatik tonus azalır.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Baroreseptör aferentleri (9. ve 10. kraniyal sinirler) → nucleus tractus solitarii → {{c1::glutamat}} salınımı → {{c2::kaudal ventrolateral medulla (CVLM)}}",
+   836675832,
+   0,
+   ""
+  ],
+  [
+   1604130826422,
+   "zZWy.YeKuy",
+   1566160514431,
+   1791540120,
+   -1,
+   "",
+   "Baroreseptör aferentleri (9. ve 10. kraniyal sinirler) → nucleus tractus solitarii → <b>glutamat</b> → kaudal ventrolateral medulla (CVLM) → <b>{{c1::GABA}}</b> ile inhibe eder → {{c2::vazokonstriktör alan (C1)}}\u001fBarorefleksin CVLM ara durağındaki GABAerjik nöronlar RVLM üzerindeki sempatik uyarıyı inhibe eder; sempatik tonus azalır.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Baroreseptör aferentleri (9. ve 10. kraniyal sinirler) → nucleus tractus solitarii → glutamat → kaudal ventrolateral medulla (CVLM) → {{c1::GABA}} ile inhibe eder → {{c2::vazokonstriktör alan (C1)}}",
+   2113431334,
+   0,
+   ""
+  ],
+  [
+   1604130928109,
+   "jVjH~VN>S{",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Derin inspiryumda artan venöz dönüşün kalp hızını yükseltmesine katkıda bulunan refleks → {{c1::Bainbridge refleksi}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Derin inspiryumda artan venöz dönüşün kalp hızını yükseltmesine katkıda bulunan refleks → {{c1::Bainbridge refleksi}}",
+   1567082198,
+   0,
+   ""
+  ],
+  [
+   1604141871630,
+   "H]$b08F>48",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Burun vestibülünün iç bölümünü döşeyen epitel → {{c1::nonkeratinize çok katlı yassı epitel}}\u001fVestibül girişi keratinize çok katlı yassı epitelle döşelidir.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Burun vestibülünün iç bölümünü döşeyen epitel → {{c1::nonkeratinize çok katlı yassı epitel}}",
+   2864260955,
+   0,
+   ""
+  ],
+  [
+   1604142686067,
+   "b84Q#FtxYk",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Pulmoner interstisyumda uyarılan {{c1::J reseptörleri}} → dispne hissi\u001fPulmoner konjesyon ve interstisyel ödemde uyarılır.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Pulmoner interstisyumda uyarılan {{c1::J reseptörleri}} → dispne hissi",
+   1543696622,
+   0,
+   ""
+  ],
+  [
+   1604143049764,
+   "vJTUTg$Gp=",
+   1566160514431,
+   1791540120,
+   -1,
+   "",
+   "FEF<sub>25–75</sub><div><br></div><div>Akciğerin elastik geri çekilmesine {{c1::bağlıdır}}.</div><div><br></div><div>Klinik ölçüm değeri, FVC ölçümünün geçerliliğine ve ekspiratuvar efora {{c1::güçlü biçimde bağımlıdır}}.</div>\u001fATS/ERS 2019 standardı, FEF25–75 yorumunda FVC ölçümünün geçerliliğini ve ekspiratuvar eforu dikkate almayı ister. Elastik geri çekilmenin fizyolojik rolü, klinik ölçümün efordan bağımsız olduğu anlamına gelmez.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "FEF25–75Akciğerin elastik geri çekilmesine {{c1::bağlıdır}}.Klinik ölçüm değeri, FVC ölçümünün geçerliliğine ve ekspiratuvar efora {{c1::güçlü biçimde bağımlıdır}}.",
+   3148092568,
+   0,
+   ""
+  ],
+  [
+   1604143415995,
+   "gI|12|V,(/",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Farklı etkenlere en duyarlı sinir lifleri<div><br></div><div>Basınca → {{c1::A}}</div><div>Hipoksiye → {{c1::B}}</div><div>Lokal anesteziğe → {{c1::C}}</div>\u001fLokal anestezik blok sırası uygulama koşullarına göre değişebilir; klasik A-B-C eşlemesi mutlak değildir.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Farklı etkenlere en duyarlı sinir lifleriBasınca → {{c1::A}}Hipoksiye → {{c1::B}}Lokal anesteziğe → {{c1::C}}",
+   1506432308,
+   0,
+   ""
+  ],
+  [
+   1604143490436,
+   "KdG0k+Cp.h",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Kan-beyin bariyerine perivasküler ayaklarıyla katılan gri cevher astrositi → {{c1::protoplazmik astrosit}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Kan-beyin bariyerine perivasküler ayaklarıyla katılan gri cevher astrositi → {{c1::protoplazmik astrosit}}",
+   2810684263,
+   0,
+   ""
+  ],
+  [
+   1604145342965,
+   "e0O{j(Bg*|",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "İntraglomerüler mezangiyal hücrelerin bazal membran artıklarını temizleyen temel işlevi → {{c1::fagositoz}} yapmaktır\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "İntraglomerüler mezangiyal hücrelerin bazal membran artıklarını temizleyen temel işlevi → {{c1::fagositoz}} yapmaktır",
+   2904699726,
+   0,
+   ""
+  ],
+  [
+   1604145591708,
+   "IV;pee#f>_",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Safra tuzları, oksalat, ürat ve katekolaminler gibi organik maddeler nefronda aktif olarak → {{c1::proksimal tübül lümenine}} salgılanır\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Safra tuzları, oksalat, ürat ve katekolaminler gibi organik maddeler nefronda aktif olarak → {{c1::proksimal tübül lümenine}} salgılanır",
+   3222616041,
+   0,
+   ""
+  ],
+  [
+   1606850849932,
+   "HmG{MJ$O]Q",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Submandibular ve sublingual tükürük bezleri:<div><br></div><div>{{c1::Endoderm}} kökenli</div>\u001fParotis bezi ektoderm kökenlidir.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Submandibular ve sublingual tükürük bezleri:{{c1::Endoderm}} kökenli",
+   2407143765,
+   0,
+   ""
+  ],
+  [
+   1606893857985,
+   "Q)2D)+^*nN",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Sinir terminalinde transmitter salınımı<div><br></div><div>{{c1::<b>N tipi Ca</b>}} kanalı aktivasyonu</div><div><br></div><div>Hücre içi {{c1::Ca}} artışı</div><div><br></div><div>{{c1::Ca}} {{c2::kalmodulin}}e bağlanır</div><div><br></div><div>{{c2::Kalmodulin}} {{c3::protein kinazı (CaMKII)}} aktive eder</div><div><br></div><div>Aktive olan protein kinaz {{c3::<b>sinapsin I</b>}} proteinini fosforiller → vezikülleri {{c1::membrana yaklaştırır}}</div><div><br></div><div>Ca → {{c2::<b>sinaptotagmin</b>}}e bağlanır → bu kompleks {{c3::<b>sintaksin</b>}} ve {{c3::<b>sinaptobrevin</b>}} (SNARE proteinleri) aracılığıyla füzyonu tetikler</div><div><br></div><div><b>Ekzositoz</b> olur</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Sinir terminalinde transmitter salınımı{{c1::N tipi Ca}} kanalı aktivasyonuHücre içi {{c1::Ca}} artışı{{c1::Ca}} {{c2::kalmodulin}}e bağlanır{{c2::Kalmodulin}} {{c3::protein kinazı (CaMKII)}} aktive ederAktive olan protein kinaz {{c3::sinapsin I}} proteinini fosforiller → vezikülleri {{c1::membrana yaklaştırır}}Ca → {{c2::sinaptotagmin}}e bağlanır → bu kompleks {{c3::sintaksin}} ve {{c3::sinaptobrevin}} (SNARE proteinleri) aracılığıyla füzyonu tetiklerEkzositoz olur",
+   257525199,
+   0,
+   ""
+  ],
+  [
+   1606911244717,
+   "fg+om(_%]y",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "{{c2::Miyozin}} başının ATPaz aktivitesini artıran:<div><br></div><div>{{c1::F-aktin}}</div>\u001fEtki fosforilasyonla değil, aktin-miyozin etkileşimiyle olur.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "{{c2::Miyozin}} başının ATPaz aktivitesini artıran:{{c1::F-aktin}}",
+   3533903782,
+   0,
+   ""
+  ],
+  [
+   1607152161300,
+   "Fj>2otnNr/",
+   1566160514431,
+   1791546394,
+   -1,
+   "",
+   "Tat reseptörleri ve seçilmiş anatomik iletim örnekleri (tat kaliteleri tek bir dil bölgesine özgü değildir)<div><br></div><div>Tatlı:</div><div>G protein kenetli {{c1::T1R2}} ve {{c1::T1R3}} / gustdusin bağlantılı /</div><div>dilin {{c5::{{c1::ön}}::ilişkili yanıt arka yüzde}} kısmı, {{c5::{{c1::fungiform}}::ilişkili yanıt arka yüzde}} papilla /</div><div>sinir: {{c5::{{c1::VII. kraniyal sinir, korda timpani}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div>Acı:</div><div>G protein kenetli {{c2::T2R}} / gustdusin bağlantılı, bazıları {{c2::K}} kanal blokajı yapar /</div><div>dilin {{c3::{{c4::{{c2::arkası}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}}, {{c3::{{c4::{{c2::sirkumvallat}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}} ve {{c3::{{c4::{{c2::foliat}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}} papillalar /</div><div>sinir: {{c3::{{c4::{{c2::IX. kraniyal sinir}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div>Umami:</div><div>G protein kenetli; Ganong: {{c3::mGlu4}}, diğerleri: {{c3::T1R1-T1R3}} / gustdusin bağlantılı /</div><div>dilin {{c2::{{c4::{{c3::arkası}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}}, {{c2::{{c4::{{c3::sirkumvallat}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}} ve {{c2::{{c4::{{c3::foliat}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}} papillalar / sinir: {{c2::{{c4::{{c3::IX. kraniyal sinir}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div>Ekşi:</div><div>{{c5::{{c4::İyonotropik}}::ilişkili yanıt arka yüzde}} reseptör, H+ iyonu geçirgen {{c4::OTOP1}} kanalı /</div><div>dilin {{c2::{{c3::{{c4::arkası}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}}, {{c2::{{c3::{{c4::sirkumvallat}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}} ve {{c2::{{c3::{{c4::foliat}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}} papillalar / sinir: {{c2::{{c3::{{c4::IX. kraniyal sinir}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div>Tuzlu:</div><div>{{c4::{{c5::İyonotropik}}::ilişkili yanıt arka yüzde}} reseptör, Na+ iyonu geçirgen {{c5::ENaC}} kanalı /</div><div>dilin {{c1::{{c5::ön}}::ilişkili yanıt arka yüzde}} kısmı, {{c1::{{c5::fungiform}}::ilişkili yanıt arka yüzde}} papilla /</div><div>sinir: {{c1::{{c5::VII. kraniyal sinir, korda timpani}}::ilişkili yanıt arka yüzde}}</div>\u001f<img src=\"paste-94353404adf40de101213b09e2904ed861de185c.jpg\"><br><img src=\"paste-b2e17aeca026cd06a9537e1d58ab40422a8e330a.jpg\"><br>Beş tat da dilin bütün bölgelerinde algılanır; eski kaynaklarda ekşi tat için ENaC geçer.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Tat reseptörleri ve seçilmiş anatomik iletim örnekleri (tat kaliteleri tek bir dil bölgesine özgü değildir)Tatlı:G protein kenetli {{c1::T1R2}} ve {{c1::T1R3}} / gustdusin bağlantılı /dilin {{c5::{{c1::ön}}::ilişkili yanıt arka yüzde}} kısmı, {{c5::{{c1::fungiform}}::ilişkili yanıt arka yüzde}} papilla /sinir: {{c5::{{c1::VII. kraniyal sinir, korda timpani}}::ilişkili yanıt arka yüzde}}Acı:G protein kenetli {{c2::T2R}} / gustdusin bağlantılı, bazıları {{c2::K}} kanal blokajı yapar /dilin {{c3::{{c4::{{c2::arkası}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}}, {{c3::{{c4::{{c2::sirkumvallat}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}} ve {{c3::{{c4::{{c2::foliat}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}} papillalar /sinir: {{c3::{{c4::{{c2::IX. kraniyal sinir}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}}Umami:G protein kenetli; Ganong: {{c3::mGlu4}}, diğerleri: {{c3::T1R1-T1R3}} / gustdusin bağlantılı /dilin {{c2::{{c4::{{c3::arkası}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}}, {{c2::{{c4::{{c3::sirkumvallat}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}} ve {{c2::{{c4::{{c3::foliat}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}} papillalar / sinir: {{c2::{{c4::{{c3::IX. kraniyal sinir}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}}Ekşi:{{c5::{{c4::İyonotropik}}::ilişkili yanıt arka yüzde}} reseptör, H+ iyonu geçirgen {{c4::OTOP1}} kanalı /dilin {{c2::{{c3::{{c4::arkası}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}}, {{c2::{{c3::{{c4::sirkumvallat}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}} ve {{c2::{{c3::{{c4::foliat}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}} papillalar / sinir: {{c2::{{c3::{{c4::IX. kraniyal sinir}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}}Tuzlu:{{c4::{{c5::İyonotropik}}::ilişkili yanıt arka yüzde}} reseptör, Na+ iyonu geçirgen {{c5::ENaC}} kanalı /dilin {{c1::{{c5::ön}}::ilişkili yanıt arka yüzde}} kısmı, {{c1::{{c5::fungiform}}::ilişkili yanıt arka yüzde}} papilla /sinir: {{c1::{{c5::VII. kraniyal sinir, korda timpani}}::ilişkili yanıt arka yüzde}}",
+   1596457232,
+   0,
+   ""
+  ],
+  [
+   1610049823423,
+   "Okx=%L!1;y",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Ara mezoderm<br>Kraniyalden kaudale:<div><br></div><div>{{c1::Pro}}nefroz → {{c2::bir şey yapmaz, geriler}}</div><div>{{c1::Mezo}}nefroz → {{c2::erkekte genital kanalları (Wolff)}} yapar</div><div>{{c1::Meta}}nefroz → {{c2::kalıcı böbrekleri}} yapar</div>\u001f<img src=\"paste-3adcbfa5510a01b51610838b5ac57148453da150.jpg\">\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Ara mezodermKraniyalden kaudale:{{c1::Pro}}nefroz → {{c2::bir şey yapmaz, geriler}}{{c1::Mezo}}nefroz → {{c2::erkekte genital kanalları (Wolff)}} yapar{{c1::Meta}}nefroz → {{c2::kalıcı böbrekleri}} yapar",
+   2161382019,
+   0,
+   ""
+  ],
+  [
+   1610052595484,
+   "n#~m,qouOZ",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Eozinofil → {{c1::eozinofilik katyonik protein}} → heparini nötralize eder\u001fHistamini eozinofillerin histaminaz enzimi yıkar.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Eozinofil → {{c1::eozinofilik katyonik protein}} → heparini nötralize eder",
+   3059052375,
+   0,
+   ""
+  ],
+  [
+   1610089129813,
+   "M;t~P!2b4b",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "<b>Grelin</b> salgılayan hücre:<div><br></div><div>{{c1::Oksintik bezlerdeki P/D1 (X/A benzeri)}} hücreler</div>\u001fEski kaynaklarda parietal (oksintik) hücre olarak geçer.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Grelin salgılayan hücre:{{c1::Oksintik bezlerdeki P/D1 (X/A benzeri)}} hücreler",
+   2412157129,
+   0,
+   ""
+  ],
+  [
+   1610117565554,
+   "o+k>.L7=Za",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Notokorddan nöral tüpün ventraline (taban plağı) giden indükleyici sinyal:<div><br></div><div>{{c1::Shh}}</div>\u001fNöral plağın ilk indüksiyonunu BMP4'ü baskılayan nogin, kordin ve follistatin sağlar.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Notokorddan nöral tüpün ventraline (taban plağı) giden indükleyici sinyal:{{c1::Shh}}",
+   1283224613,
+   0,
+   ""
+  ],
+  [
+   1610174844177,
+   "H18cPA{6M^",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Böbrekte:<div><br></div><div>{{c1::Bowman parietal yaprağı}} ve</div><div>{{c1::Henle kulpunun ince kısmı}}:</div><div><br></div><div><b>Tek katlı yassı</b> epitel</div>\u001fDiğer tübül bölümleri tek katlı kübik (toplayıcı kanallar kübik–prizmatik)\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Böbrekte:{{c1::Bowman parietal yaprağı}} ve{{c1::Henle kulpunun ince kısmı}}:Tek katlı yassı epitel",
+   1226914637,
+   0,
+   ""
+  ],
+  [
+   1610195670901,
+   "sX<YT:bh]2",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Ehlers-Danlos sendromu tip 4 (vasküler tip):<div><br></div><div>Tip {{c1::3}} kollajen defekti</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Ehlers-Danlos sendromu tip 4 (vasküler tip):Tip {{c1::3}} kollajen defekti",
+   1410442004,
+   0,
+   ""
+  ],
+  [
+   1615745423578,
+   "Ek!,#R<S~R",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Hücre zarını hücre iskeletine bağlayan: {{c1::spektrin}}\u001fSpektrini zardaki band 3 proteinine ankirin bağlar.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Hücre zarını hücre iskeletine bağlayan: {{c1::spektrin}}",
+   3077845000,
+   0,
+   ""
+  ],
+  [
+   1617567579169,
+   "zs[AnZ@6x}",
+   1566160514431,
+   1791546394,
+   -1,
+   "",
+   "Glukoz metabolize olduktan sonra %5 dekstroz çözeltisinin etkisi → {{c1::hipo}}tonik\u001fŞişede plazmayla izoozmotiktir; glukoz metabolize olunca vücutta hipotonik sıvı gibi davranır.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Glukoz metabolize olduktan sonra %5 dekstroz çözeltisinin etkisi → {{c1::hipo}}tonik",
+   428302449,
+   0,
+   ""
+  ],
+  [
+   1618700546655,
+   "s((iZ_`GkB",
+   1566160514431,
+   1791540120,
+   -1,
+   "",
+   "İnsan term plasentasında bazal membran kollajeni:<div><br></div><div>Tip {{c1::IV}} kollajen</div>\u001fİnsan term plasentasının bazal membranında tip IV kollajen ve laminin bulunur. Tip V kollajenin stromal matrikste bulunması, bazal membranın ana kollajenini tip V yapmaz.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "İnsan term plasentasında bazal membran kollajeni:Tip {{c1::IV}} kollajen",
+   3498119945,
+   0,
+   ""
+  ],
+  [
+   1618743807322,
+   "u^_EINhDOH",
+   1566160514431,
+   1791546394,
+   -1,
+   "",
+   "Nöroaktif metaboliti allopregnanolon olan hormon: {{c1::Progesteron}}\u001fAllopregnanolon GABA-A reseptörünün pozitif allosterik modülatörüdür. PMDD’de steroid değişimlerine duyarlılık önemlidir; bu ilişki tüm premenstrüel sendrom için tek neden açıklaması değildir.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Nöroaktif metaboliti allopregnanolon olan hormon: {{c1::Progesteron}}",
+   674592182,
+   0,
+   ""
+  ],
+  [
+   1618745987053,
+   "pT=0qaeJT",
+   1566160514431,
+   1791546394,
+   -1,
+   "",
+   "Kemirgenlerde kopülasyon tıkacı oluşumunu sağlayan enzim:<div><br></div><div>{{c1::Vezikülaz}}</div><div><br></div><div>{{c1::Koagülasyon bezinde (anterior prostat)}} üretilir</div>\u001fKemirgenlerde koagülasyon bezinden (prostat ön lobu) salgılanır; substratı vesicula seminalis proteinleridir.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Kemirgenlerde kopülasyon tıkacı oluşumunu sağlayan enzim:{{c1::Vezikülaz}}{{c1::Koagülasyon bezinde (anterior prostat)}} üretilir",
+   3473351867,
+   0,
+   ""
+  ],
+  [
+   1618750526861,
+   "A2dG@8ro2f",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "<b>Epiblast göçünü</b> indükleyen molekül:<div><br></div><div>{{c1::FGF-8}}</div><div>----------------</div><div><b>Mezoderm</b> oluşumunu indükleyen:</div><div><br></div><div>{{c1::Nodal}}</div><div>----------------</div><div><b>Endoderm</b> oluşumunu indükleyen:</div><div><br></div><div>{{c2::Wnt}}</div><div>{{c2::TGF-β}}</div><div>{{c2::VegT}}</div>\u001fNodal, TGF-β ailesinin üyesidir.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Epiblast göçünü indükleyen molekül:{{c1::FGF-8}}----------------Mezoderm oluşumunu indükleyen:{{c1::Nodal}}----------------Endoderm oluşumunu indükleyen:{{c2::Wnt}}{{c2::TGF-β}}{{c2::VegT}}",
+   1735836752,
+   0,
+   ""
+  ],
+  [
+   1618752793638,
+   "z|:(Xp9&{W",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Faringeal arkustan {{c1::ven}} gelişmez\u001fArter<div>Kemik</div><div>Kıkırdak</div><div>Kas</div><div>Sinir</div><div><br></div><div>gelişir</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Faringeal arkustan {{c1::ven}} gelişmez",
+   2184906565,
+   0,
+   ""
+  ],
+  [
+   1618775209117,
+   "OB}*Qz4NU}",
+   1566160514431,
+   1791546394,
+   -1,
+   "",
+   "Umami tat reseptörleri:<div><br></div><div><b>MSG →</b><br><div><br></div><div>Tip {{c1::2}} hücre üzerindeki GPCR'ye bağlanır</div></div><div><br></div><div>Ca salınımı ve zar depolarizasyonu</div><div><br></div><div><b>CALHM1/CALHM3</b> kanalları açılır → {{c1::ATP}} salar</div>\u001fGüncel çalışmalarda ATP salınımından CALHM1/CALHM3 kanalları sorumlu tutulur.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Umami tat reseptörleri:MSG →Tip {{c1::2}} hücre üzerindeki GPCR'ye bağlanırCa salınımı ve zar depolarizasyonuCALHM1/CALHM3 kanalları açılır → {{c1::ATP}} salar",
+   241733438,
+   0,
+   ""
+  ],
+  [
+   1618776971927,
+   "cDx}:abokY",
+   1566160514431,
+   1791546394,
+   -1,
+   "",
+   "Yağ, protein ve karbonhidratla salınımı uyarılan, bağırsak K hücrelerinden salgılanan hormon:<div><br></div><div>{{c1::<b>GIP</b> (glukoza bağımlı insülinotropik peptid)}}</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Yağ, protein ve karbonhidratla salınımı uyarılan, bağırsak K hücrelerinden salgılanan hormon:{{c1::GIP (glukoza bağımlı insülinotropik peptid)}}",
+   183934868,
+   0,
+   ""
+  ],
+  [
+   1618829710920,
+   "Ldq<Hdve5R",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "<b>Baroreseptörlerin </b>olduğu bölgelerde (karotis sinüsü):<div><br></div><div><b>Tunika intima</b>: {{c1::kalınlaşmış}}</div><div><br></div><div><b>Tunika media</b>: {{c1::incelmiştir}}</div><div><br></div><div><b>Duyusal sinir sonlanmaları:</b> tunika {{c1::adventisya}}da</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Baroreseptörlerin olduğu bölgelerde (karotis sinüsü):Tunika intima: {{c1::kalınlaşmış}}Tunika media: {{c1::incelmiştir}}Duyusal sinir sonlanmaları: tunika {{c1::adventisya}}da",
+   38109843,
+   0,
+   ""
+  ],
+  [
+   1618832238977,
+   "yCl@6c%JN2",
+   1566160514431,
+   1791546394,
+   -1,
+   "",
+   "<b>Fick</b> prensibiyle <b>CO</b> (kalp debisi) hesabı:<div><br></div><div>CO = {{c1::dakikadaki O2 tüketimi}} / ({{c1::arteriyel O2 içeriği}} − {{c1::mikst venöz O2 içeriği}})</div>\u001fPayda, arteriyel ve mikst venöz (pulmoner arter) kanın O2 içerikleri farkıdır.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Fick prensibiyle CO (kalp debisi) hesabı:CO = {{c1::dakikadaki O2 tüketimi}} / ({{c1::arteriyel O2 içeriği}} − {{c1::mikst venöz O2 içeriği}})",
+   1680460863,
+   0,
+   ""
+  ],
+  [
+   1618991067598,
+   "Hu#O?Z)T$W",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Klasik bilgiye göre hipergliseminin GFR'yi artırma mekanizması:<div><br></div><div>{{c1::Filtrasyon katsayısını (Kf) artırır}}</div>\u001fGüncel çalışmalarda ana mekanizma artmış Na-glukoz geri emilimine bağlı tübüloglomerüler geri bildirimin zayıflamasıdır.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Klasik bilgiye göre hipergliseminin GFR'yi artırma mekanizması:{{c1::Filtrasyon katsayısını (Kf) artırır}}",
+   2405158225,
+   0,
+   ""
+  ],
+  [
+   1618991211994,
+   "E!6v5iQWpT",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "<b>Filtrasyon fraksiyonu</b> =<div><br></div><div>{{c1::GFR}}</div><div>/</div><div>{{c1::RPA}}</div>\u001fRPA: renal plazma akımı\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Filtrasyon fraksiyonu ={{c1::GFR}}/{{c1::RPA}}",
+   2276492318,
+   0,
+   ""
+  ],
+  [
+   1620719887730,
+   "j`G`(xVBLq",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Proteinlerin organellere yönlendirilmesi:<div><br></div><div><b>N-terminal (hidrofobik) sinyal peptidi</b> → {{c1::ER}}</div><div><br></div><div><b>Karboksi terminal sinyal dizisi</b> → {{c1::ER lümeni}}</div><div><br></div><div><b>Amino terminal (amfipatik) dizi</b> → {{c1::mitokondri matriksi}}</div><div><br></div><div><b>Di-asidik diziler</b> → {{c1::Golgi membranı}}</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Proteinlerin organellere yönlendirilmesi:N-terminal (hidrofobik) sinyal peptidi → {{c1::ER}}Karboksi terminal sinyal dizisi → {{c1::ER lümeni}}Amino terminal (amfipatik) dizi → {{c1::mitokondri matriksi}}Di-asidik diziler → {{c1::Golgi membranı}}",
+   3366541155,
+   0,
+   ""
+  ],
+  [
+   1620742328588,
+   "L_!/B@l6]?",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Tükürükteki yüksek Ca ve fosfatı stabilize eden protein:<div><br></div><div>{{c1::<b>Statherin</b>}}</div>\u001fKalsiyum fosfatın çökmesini önler, minenin remineralizasyonunu düzenler.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Tükürükteki yüksek Ca ve fosfatı stabilize eden protein:{{c1::Statherin}}",
+   3281074360,
+   0,
+   ""
+  ],
+  [
+   1620743849677,
+   "Fgvhbjy$Hm",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "<b>Safra kesesi</b>;<br><br>Safrada konsantrasyonunu artırır →<div>{{c1::K}} ve {{c1::Ca}} (su emilimiyle yoğunlaşır)<br><br>Safradan →<br>{{c2::Na}}, {{c2::Cl}}, HCO3 absorbe eder</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Safra kesesi;Safrada konsantrasyonunu artırır →{{c1::K}} ve {{c1::Ca}} (su emilimiyle yoğunlaşır)Safradan →{{c2::Na}}, {{c2::Cl}}, HCO3 absorbe eder",
+   4182656384,
+   0,
+   ""
+  ],
+  [
+   1623522806620,
+   "O[X*.^A,):",
+   1566160514431,
+   1791546394,
+   -1,
+   "",
+   "<b>Sinir</b> fasikülünü çevreleyen difüzyon bariyerini oluşturan kılıf:<div><br></div><div>{{c1::Peri}}nöryum</div>\u001fKan-sinir bariyerine endonöryal mikrodamar endotelinin sıkı bağlantıları da katkıda bulunur.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Sinir fasikülünü çevreleyen difüzyon bariyerini oluşturan kılıf:{{c1::Peri}}nöryum",
+   1085695783,
+   0,
+   ""
+  ],
+  [
+   1625213528102,
+   "zL)u(iDzFf",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "<b>Orofaringeal membran</b>: {{c1::4}}. haftada<div><br></div><div><b>Kloakal membran</b>: {{c1::8}}. haftada</div><div><br></div><div>yırtılır</div>\u001fLangman'da kloakal membranın yırtılması 7. haftanın sonudur.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Orofaringeal membran: {{c1::4}}. haftadaKloakal membran: {{c1::8}}. haftadayırtılır",
+   1002395316,
+   0,
+   ""
+  ]
+ ],
+ "needsExpert": [
+  {
+   "noteId": 1607166396405,
+   "actions": [
+    "Özgün listedeki 'Anti TNF tdv' üyesi yeniden yazımda çıkarılmış; doğruluğu belirsiz olduğundan geri getirilmedi, uzman kontrolü gerekir (kural 4, 7)."
+   ]
+  }
+ ]
+}

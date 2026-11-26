@@ -50,7 +50,7 @@
     "parts": [
       {
         "type": "text",
-        "value": "Deri bazal membranına (hemidesmozomlara) karşı lineer IgG antikor "
+        "value": "Deri bazal membranına karşı IgG antikor "
       },
       {
         "type": "cloze",
@@ -398,7 +398,7 @@
         "value": " mIU/mL iken transvajinal USG'de intrauterin kese görülmüyorsa → ektopik gebelik düşünülür"
       }
     ],
-    "extra": "Connolly ve ark. (2013) çalışmasında 3510 mIU/mL, canlı intrauterin gebelikte kesenin transvajinal USG'de görülmesi için %99 olasılık eşiğidir; %100 kesinlik sınırı değildir. Bu düzeyin üzerinde kese görülmemesi tek başına gebeliğin canlılığını veya yerini kesinleştirmez; klinik değerlendirme, seri β-hCG ve tekrar USG gerekir. Klasik diskriminatuar zon 1500–2000 mIU/mL olarak anılır.",
+    "extra": "",
     "osymUrl": "https://www.osym.gov.tr/",
     "intervals": {
       "again": "10 dk",

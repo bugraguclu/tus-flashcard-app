@@ -5,6 +5,7 @@ import initSqlJs, { Database } from 'sql.js';
 import { beforeAll, afterAll, describe, expect, it } from 'vitest';
 import { unpackCatalogBytes } from './catalogPack';
 import { catalogPackKey } from './catalogPackKey';
+import { rowsBeforeLaterPasses } from '../test/catalogEditorialPasses';
 import { extractClozeNumbers, renderClozeAnswer, renderClozeQuestion } from './templates';
 
 type Scope = { noteId: number; guid: string; ordinals: number[]; originalExtraEmpty: boolean };
@@ -18,12 +19,7 @@ const review = JSON.parse(readFileSync('docs/catalog-corrections/farmakoloji-edi
 const notes = new Map<number, { guid: string; fields: Record<string, string>; ordinals: number[] }>();
 // Later course passes are authorized. Rewind only their audited rows when
 // checking the earlier pharmacology pass's historical boundary.
-const beforeLaterPasses = new Map(['biyokimya', 'mikrobiyoloji', 'patoloji', 'anatomi'].flatMap(course => {
-    const later = JSON.parse(readFileSync(`docs/catalog-corrections/${course}-editorial.json`, 'utf8')) as {
-        noteRowsBefore: (string | number | null)[][];
-    };
-    return later.noteRowsBefore.map(row => [Number(row[0]), row] as const);
-}));
+const beforeLaterPasses = rowsBeforeLaterPasses('farmakoloji');
 const hash = (value: string | Uint8Array) => createHash('sha256').update(value).digest('hex');
 let db: Database;
 

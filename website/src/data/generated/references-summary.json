@@ -1124,7 +1124,7 @@
       "eksikAdim": "",
       "sinavOncesiSurumde": "evet",
       "cardId": "BKA-173708",
-      "kartOzet": "Deri bazal membranına (hemidesmozomlara) karşı lineer IgG antikor büllöz pemfigoidde görülür"
+      "kartOzet": "Deri bazal membranına karşı IgG antikor büllöz pemfigoidde görülür"
     },
     {
       "qid": "2026/2-T025",
@@ -1410,7 +1410,7 @@
       "eksikAdim": "",
       "sinavOncesiSurumde": "evet",
       "cardId": "BKA-051160",
-      "kartOzet": "Gut'ta ürik asidi artırdığı için önerilmeyen ilaçlar (4) → aspirin, siklosporin, tiyazidler, niasin"
+      "kartOzet": "Gut'ta önerilmeyen ilaçlar (4) → aspirin, siklosporin, tiyazidler, niasin"
     }
   ]
 }

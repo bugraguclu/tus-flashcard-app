@@ -1,6 +1,6 @@
 {
   "generatedAt": "2026-10-26",
-  "catalogShaShort": "7428ba681ef0",
+  "catalogShaShort": "b70f3b0510ca",
   "totals": {
     "cards": 9575,
     "notes": 7721,
@@ -21,11 +21,11 @@
       "topTopics": [
         {
           "name": "Yenidoğan",
-          "cards": 168
+          "cards": 166
         },
         {
           "name": "Alerji ve İmmünoloji",
-          "cards": 135
+          "cards": 134
         },
         {
           "name": "Metabolizma",
@@ -37,7 +37,7 @@
         },
         {
           "name": "Kardiyoloji",
-          "cards": 82
+          "cards": 83
         }
       ]
     },
@@ -51,19 +51,19 @@
       "topTopics": [
         {
           "name": "Hematoloji",
-          "cards": 199
+          "cards": 195
         },
         {
           "name": "Kardiyoloji",
-          "cards": 173
+          "cards": 168
         },
         {
           "name": "Endokrinoloji",
-          "cards": 159
+          "cards": 161
         },
         {
           "name": "Nefroloji",
-          "cards": 123
+          "cards": 117
         },
         {
           "name": "Göğüs Hastalıkları",
@@ -137,15 +137,15 @@
       "topTopics": [
         {
           "name": "Obstetri",
-          "cards": 332
+          "cards": 321
         },
         {
           "name": "Jinekolojik Onkoloji",
-          "cards": 130
+          "cards": 129
         },
         {
           "name": "Üreme Endokrinolojisi",
-          "cards": 63
+          "cards": 66
         },
         {
           "name": "Kontrasepsiyon",
@@ -153,7 +153,7 @@
         },
         {
           "name": "Anatomi ve Muayene",
-          "cards": 31
+          "cards": 29
         }
       ]
     },
@@ -167,23 +167,23 @@
       "topTopics": [
         {
           "name": "İnce Bağırsak ve Kolorektal",
-          "cards": 112
+          "cards": 102
         },
         {
           "name": "Karaciğer, Safra ve Pankreas",
-          "cards": 98
+          "cards": 99
         },
         {
           "name": "Meme",
-          "cards": 71
-        },
-        {
-          "name": "Tiroit",
-          "cards": 56
+          "cards": 68
         },
         {
           "name": "Özofagus ve Mide",
-          "cards": 53
+          "cards": 55
+        },
+        {
+          "name": "Tiroit",
+          "cards": 54
         }
       ]
     },
@@ -261,11 +261,11 @@
         },
         {
           "name": "Göz Hastalıkları",
-          "cards": 65
+          "cards": 64
         },
         {
           "name": "Dermatoloji",
-          "cards": 63
+          "cards": 62
         },
         {
           "name": "KBB",
@@ -273,7 +273,7 @@
         },
         {
           "name": "Psikiyatri",
-          "cards": 38
+          "cards": 37
         }
       ]
     },
@@ -317,7 +317,7 @@
       "topTopics": [
         {
           "name": "Hücre ve Doku Histolojisi",
-          "cards": 67
+          "cards": 66
         },
         {
           "name": "Nörofizyoloji ve Duyular",
@@ -329,11 +329,11 @@
         },
         {
           "name": "Kas ve Sinir Fizyolojisi",
-          "cards": 48
+          "cards": 49
         },
         {
-          "name": "Kardiyovasküler Fizyoloji",
-          "cards": 42
+          "name": "Endokrin ve Üreme Fizyolojisi",
+          "cards": 41
         }
       ]
     },

@@ -5,6 +5,7 @@ import initSqlJs, { Database } from 'sql.js';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { unpackCatalogBytes } from './catalogPack';
 import { catalogPackKey } from './catalogPackKey';
+import { rowsBeforeLaterPasses } from '../test/catalogEditorialPasses';
 import { extractClozeNumbers, renderClozeAnswer, renderClozeQuestion } from './templates';
 
 type Review = {
@@ -15,7 +16,7 @@ type Review = {
 };
 const reviews = ['patoloji', 'anatomi'].map(course =>
     JSON.parse(readFileSync(`docs/catalog-corrections/${course}-editorial.json`, 'utf8')) as Review);
-const beforeAnatomy = new Map(reviews[1].noteRowsBefore.map(row => [Number(row[0]), row]));
+const beforeLaterPasses = { Patoloji: rowsBeforeLaterPasses('patoloji'), Anatomi: rowsBeforeLaterPasses('anatomi') };
 const notes = new Map<number, { guid: string; fields: Record<string, string>; ordinals: number[] }>();
 const hash = (value: string | Uint8Array) => createHash('sha256').update(value).digest('hex');
 const text = (id: number) => notes.get(id)!.fields.Text;
@@ -78,8 +79,9 @@ describe.each(reviews)('$course editorial scope in the shipped catalog', review 
         };
         for (const [boundary, query] of Object.entries(queries)) {
             const rows = db.exec(query)[0]?.values ?? [];
-            const atReviewTime = boundary === 'otherCourses' && review.course === 'Patoloji'
-                ? rows.map(row => beforeAnatomy.get(Number(row[0])) ?? row) : rows;
+            const rewind = beforeLaterPasses[review.course as keyof typeof beforeLaterPasses];
+            const atReviewTime = boundary === 'otherCourses'
+                ? rows.map(row => rewind.get(Number(row[0])) ?? row) : rows;
             expect(hash(JSON.stringify(atReviewTime)), boundary).toBe(review.boundaries[boundary]);
         }
     });

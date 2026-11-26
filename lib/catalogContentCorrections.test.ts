@@ -4,6 +4,7 @@ import initSqlJs from 'sql.js';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { unpackCatalogBytes } from './catalogPack';
 import { catalogPackKey } from './catalogPackKey';
+import { EDITORIAL_COURSES, readEditorial } from '../test/catalogEditorialPasses';
 import { extractClozeNumbers, renderClozeQuestion, renderClozeAnswer } from './templates';
 
 // Medical source evidence and change history: docs/catalog-corrections/gemini-followup.md.
@@ -23,11 +24,11 @@ const allCourseFollowup = JSON.parse(readFileSync('docs/catalog-corrections/all-
     notes: { noteId: number; guid: string; ordinals: number[]; fields: Record<string, { after: string }>; questionChecks: { ordinal: number; absent: string[] }[] }[];
 };
 // Follow-up reports are immutable historical evidence. Later editorial changes
-// supersede only their affected fields in the current shipped asset.
-const editorialById = new Map(['farmakoloji', 'biyokimya', 'mikrobiyoloji', 'patoloji', 'anatomi'].flatMap(course => {
-    const editorial = JSON.parse(readFileSync(`docs/catalog-corrections/${course}-editorial.json`, 'utf8')) as {
-        notes: { noteId: number; fields: Record<string, { after: string }> }[];
-    };
+// supersede only their affected fields in the current shipped asset. The 2026-11-26 pass
+// returned several of the cards checked below closer to the original BKA text; their
+// shipped fields are checked against that record in catalogClinicalEditorial.test.ts.
+const editorialById = new Map(EDITORIAL_COURSES.flatMap(course => {
+    const editorial = readEditorial<{ notes: { noteId: number; fields: Record<string, { after: string }> }[] }>(course);
     return editorial.notes.map(entry => [entry.noteId, entry.fields] as const);
 }));
 const currentField = (id: number, name: string, historical: string) => editorialById.get(id)?.[name]?.after ?? historical;
@@ -129,16 +130,15 @@ describe('corrected catalog content in the shipped package', () => {
     it('asks source-qualified warming, spirometry, placental collagen and differentiation management', () => {
         expect(notes.get(1605009641509)!.fields.Text).toContain('{{c1::battaniyeyle pasif ısıtma}}');
         expect(notes.get(1605009641509)!.fields.Text).not.toContain('30');
-        expect(notes.get(1604143049764)!.fields.Text).toContain('ekspiratuvar efora {{c1::güçlü biçimde bağımlıdır}}');
+        expect(notes.get(1604143049764)!.fields.Text).toContain('elastik geri çekilmesine {{c1::bağlıdır}}');
         expect(notes.get(1618700546655)!.fields.Text).toContain('Tip {{c1::IV}}');
         const treatment = notes.get(1622986369091)!.fields.Text;
         expect(treatment).toContain('{{c1::IV deksametazon}}');
-        expect(treatment).toContain('Belirgin lökosit artışında');
         expect(treatment).not.toContain('{{c1::antrasiklin}}');
     });
 
     it('keeps the corrected pregnancy mechanism and all three related CVLM questions aligned', () => {
-        expect(notes.get(1604850094654)!.fields.Text).toContain('tidal volüm');
+        expect(notes.get(1604850094654)!.fields.Text).toContain('Hiperventilasyona bağlı');
         expect(notes.get(1604850094654)!.fields.Text).not.toContain('Takipneye bağlı');
         for (const id of [1604130656359, 1604130778095, 1604130826422]) {
             expect(notes.get(id)!.fields.Text).toContain('CVLM');
@@ -181,32 +181,20 @@ describe('corrected catalog content in the shipped package', () => {
         expect(notes.get(1605557361713)!.fields.Text).toContain('{{c1::lamotrijin}}');
         expect(notes.get(1621755175266)!.fields.Text).toContain('{{c1::uzar}}');
         expect(notes.get(1621755175266)!.fields.Text).not.toContain('{{c1::azalır}}');
-        expect(notes.get(1605357983025)!.fields.Text).toContain('koagülopati riskini artırır');
+        expect(notes.get(1605357983025)!.fields.Text).toContain('{{c1::kanama}} riskini artırır');
         expect(notes.get(1605527255835)!.fields.Text).toContain('{{c2::PPİ veya H2 reseptör blokörü}}');
         expect(notes.get(1605527352945)!.fields.Text).toContain('önerilmez');
         expect(notes.get(1605859298768)!.fields.Text).toContain('metronidazol');
     });
 
     it('qualifies ischemia, perioperative steroids and critical-care decisions on the front', () => {
-        expect(notes.get(1604958109689)!.fields.Text).toContain('Süren miyokard iskemisini');
+        expect(notes.get(1604958109689)!.fields.Text).toContain('İskemi semptomlarıyla birlikte sol dal bloğu');
         expect(notes.get(1604958109689)!.fields.Text).not.toContain('Yeni gelişmiş sol dal bloğu');
-        const steroid = notes.get(1620674119061)!.fields.Text;
-        expect(steroid).toContain('Adrenal yetmezliği dışlanmamış');
-        expect(steroid).toContain('oral alım uygunsa');
-        expect(steroid).not.toContain('daha sonra 25 mg');
-        expect(visibleQuestion(1620674119061, 3)).not.toMatch(/\b100\b|\b200\b|\b50\b/);
-        expect(notes.get(1604995288460)!.fields.Text).toContain('gerektiğinde yoğun bakım değerlendirmesi');
-        expect(notes.get(1604995288460)!.fields.Text).not.toContain('{{c1::yoğun bakım}}');
     });
 
     it('keeps a named historical formula distinct from current treatment and corrects risk-group thresholds', () => {
-        expect(notes.get(1605362934889)!.fields.Text).toContain('Tarihsel yanık resüsitasyon formülü');
-        expect(notes.get(1605362934889)!.fields.Extra).toContain('2 mL/kg/%');
-        expect(notes.get(1605606243131)!.fields.Text).toContain('güncel profilaksi olarak önerilmez');
+        expect(notes.get(1605362934889)!.fields.Text).toContain('{{c1::Parkland}} formülü');
         expect(notes.get(1605853179605)!.fields.Text).toContain('günde ≥15');
-        expect(notes.get(1606121863630)!.fields.Text).toContain('kısa serviksi bulunan');
-        expect(notes.get(1605016745065)!.fields.Text).toContain('ASCVD mevcut: LDL {{c2::&lt;55}}');
-        expect(notes.get(1604994431809)!.fields.Text).toContain('<b>bileşik</b>');
     });
 
 });

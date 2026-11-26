@@ -48,6 +48,10 @@ def main():
         'Farmakoloji': (669, 1748430717056), 'Biyokimya': (484, 1748430717053),
         'Mikrobiyoloji': (587, 1748430717054),
         'Patoloji': (609, 1748430717055), 'Anatomi': (381, 1748430717051),
+        'Pediatri': (1169, 1748430717058), 'Dahiliye': (995, 1748430717057),
+        'Deneme ve Soru': (745, 1748430717050), 'FHE': (510, 1748430717052),
+        'Genel Cerrahi': (564, 1748430717059), 'Kadın Doğum': (524, 1748430717061),
+        'Küçük Stajlar': (484, 1748430717060),
     }
     assert review['course'] in audited_courses, 'Only explicitly audited courses are authorized.'
     expected_count, deck_id = audited_courses[review['course']]
@@ -93,13 +97,14 @@ def main():
             names = [field['name'] for field in model['flds']]
             values = flds.split('\x1f')
             for name, update in entry['fields'].items():
-                assert name in ('Text', 'Extra'), name
+                assert name in (('Text', 'Extra') if model['type'] == 1 else ('Ön', 'Geri')), name
                 index = names.index(name)
                 assert values[index] in (update['before'], update['after']), (nid, name, 'stale before')
                 assert media(values[index]) == media(update['after']), (nid, name, 'media')
                 values[index] = update['after']
-            ords = sorted(int(n) for n in set(re.findall(r'\{\{c(\d+)::', values[names.index('Text')])))
-            assert ords == scope[nid]['ordinals'], (nid, 'cloze ordinals')
+            if model['type'] == 1:
+                ords = sorted(int(n) for n in set(re.findall(r'\{\{c(\d+)::', values[names.index('Text')])))
+                assert ords == scope[nid]['ordinals'], (nid, 'cloze ordinals')
             updated = '\x1f'.join(values)
             if updated != flds:
                 changed += 1

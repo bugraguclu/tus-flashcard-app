@@ -98,6 +98,7 @@ import { repositionSelectedNewCards } from './browserReposition';
 import { DEFAULT_DECK_CONFIG, type NoteType } from './models';
 import { getBrowserCardCount, getBrowserCardIdsMatchingText, getBrowserCards } from './studyRepository';
 import { DEFAULT_SETTINGS } from './storage';
+import { EDITORIAL_COURSES, readEditorial } from '../test/catalogEditorialPasses';
 
 const LEARNER = {
     noteTypeId: 1,
@@ -167,10 +168,8 @@ function failNthWrite(db: SyncDb, pattern: RegExp, nth: number): void {
 }
 
 type EditorialNote = { noteId: number; fields: Record<string, { before: string; after: string }> };
-const EDITORIAL_NOTES: EditorialNote[] = ['farmakoloji', 'biyokimya', 'mikrobiyoloji', 'patoloji', 'anatomi']
-    .flatMap((course) => (JSON.parse(readFileSync(
-        `docs/catalog-corrections/${course}-editorial.json`, 'utf8',
-    )) as { notes: EditorialNote[] }).notes);
+const EDITORIAL_NOTES: EditorialNote[] = EDITORIAL_COURSES
+    .flatMap((course) => readEditorial<{ notes: EditorialNote[] }>(course).notes);
 
 /** The bundled package with every editorial change undone: the package learners installed before it. */
 async function packageBeforeEditorial(): Promise<Uint8Array> {

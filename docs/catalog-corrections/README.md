@@ -1,5 +1,28 @@
 # BKA TUS kart düzeltmeleri
 
+## 26 Kasım 2026 — kalan yedi dersin editoryal sadeleştirmesi pakette
+
+Pediatri (364), Dahiliye (331), Deneme ve Soru (290), FHE (47), Genel Cerrahi (173), Kadın Doğum
+(121) ve Küçük Stajlar (124) — toplam **1.450 not, 1.748 alan** — pakete alındı. İlk tur
+(17 Ekim, `kartlar` dalı f3266d5) özgün BKA kartlarıyla yan yana ikinci kez denetlendi: sonradan
+eklenen arka yüz açıklamaları, eş ad ve açıklama parantezleri, liste üyeleri, kılavuz ve kaynak
+atıfları kaldırıldı; yeniden yazımda kaybolan özgün bilgiler geri geldi. Önce/sonra tablosu ders
+sahibince satır satır onaylandı.
+
+- Alan kayıtları: `<ders>-editorial.json` (`notes` önce/sonra, `scope`, sınır özetleri,
+  `noteRowsBefore`, `needsExpert`). Dersler bu sırayla uygulandı; her dersin sınır özeti kendi
+  öncesindeki pakete göredir.
+- Deneme ve Soru'da `Ön`/`Geri` alanlı temel notlar da vardır; betik cloze ordinalini yalnız
+  cloze notlarında denetler.
+- `needsExpert` listesindeki 39 not uzman kararı bekler; değişiklik önerilmeyenler (19) olduğu
+  gibi bırakıldı.
+- Bu tur önceki bazı içerik düzeltmelerini özgün kart hükmüne döndürdü (örnekler: Hextend,
+  3H, diyabette LDL hedefi, cerrahi steroid dozu); `catalogContentCorrections.test.ts` bu
+  kartlarda artık yeni kaydı izler.
+- Ders yamalarının `after` alanları ve `editorialHistory` kayıtları, manifest (konu alt destesi
+  dışında kalan kart sayısı 2.625'ten 2.682'ye çıkar), `.tuspack` ve sitenin üretilmiş verisi yeni paketten
+  yeniden üretildi.
+
 ## 25 Kasım 2026 — beş dersin editoryal sadeleştirmesi pakette
 
 17 Ekim'de hazırlanan beş ders turu (Farmakoloji 122, Patoloji 124, Anatomi 97,
@@ -21,8 +44,7 @@ konu sayıları).
   taşıyor); depodaki Farmakoloji Excel'i eski alanları gösterir. `*-editorial.md`
   dosyalarındaki Excel ve "tüm dersler önce/sonra" bağlantıları depoda olmayan çalışma
   dosyalarını gösterir; güncel kaynak JSON kayıtlarıdır.
-- Pediatri, Dahiliye, Deneme ve Soru, FHE, Genel Cerrahi, Kadın Doğum ve Küçük Stajlar
-  için aynı tur uygulanmadı.
+- Kalan yedi ders 26 Kasım 2026'da pakete alındı (aşağıda).
 
 Bu dizin, paketle gelen BKA TUS kataloğunun (`assets/catalog/bka-tus-complete.apkg`) ders ders
 önerilen kart düzeltmelerini tutar. Dosyalar `scripts/apply-all-catalog-patches.py` ile özgün pakete

@@ -1,6 +1,6 @@
 {
   "generatedFrom": "assets/catalog/bka-tus-complete.apkg",
-  "sha256": "7428ba681ef026f805ac73796798054f2da82150a7b12c8b51017b2bfd7865a9",
+  "sha256": "b70f3b0510ca844065deceb76554cba0f64a41a2a2508277147ce8ca0f2868ba",
   "noteTypes": [
     {
       "id": 1566160514431,
@@ -7739,7 +7739,7 @@
     "cards": 9575,
     "courses": 12,
     "topics": 106,
-    "ungroupedCards": 2625,
+    "ungroupedCards": 2682,
     "media": 49
   },
   "courses": [
@@ -7866,14 +7866,14 @@
         },
         {
           "name": "Hücre ve Doku Histolojisi",
-          "notes": 63,
-          "cards": 67,
+          "notes": 62,
+          "cards": 66,
           "deck": true
         },
         {
           "name": "Kardiyovasküler Fizyoloji",
-          "notes": 37,
-          "cards": 42,
+          "notes": 33,
+          "cards": 38,
           "deck": true
         },
         {
@@ -7884,26 +7884,26 @@
         },
         {
           "name": "Böbrek ve Sıvı-Elektrolit",
-          "notes": 21,
-          "cards": 29,
+          "notes": 20,
+          "cards": 28,
           "deck": true
         },
         {
           "name": "Sindirim Fizyolojisi",
-          "notes": 25,
-          "cards": 31,
+          "notes": 23,
+          "cards": 28,
           "deck": true
         },
         {
           "name": "Endokrin ve Üreme Fizyolojisi",
-          "notes": 27,
-          "cards": 40,
+          "notes": 28,
+          "cards": 41,
           "deck": true
         },
         {
           "name": "Kas ve Sinir Fizyolojisi",
-          "notes": 40,
-          "cards": 48,
+          "notes": 41,
+          "cards": 49,
           "deck": true
         },
         {
@@ -7920,8 +7920,8 @@
         },
         {
           "name": "Genel",
-          "notes": 187,
-          "cards": 204,
+          "notes": 193,
+          "cards": 211,
           "deck": false
         }
       ]
@@ -8185,8 +8185,8 @@
       "topics": [
         {
           "name": "Kardiyoloji",
-          "notes": 146,
-          "cards": 173,
+          "notes": 141,
+          "cards": 168,
           "deck": true
         },
         {
@@ -8197,26 +8197,26 @@
         },
         {
           "name": "Gastroenteroloji ve Hepatoloji",
-          "notes": 77,
-          "cards": 99,
+          "notes": 75,
+          "cards": 97,
           "deck": true
         },
         {
           "name": "Nefroloji",
-          "notes": 93,
-          "cards": 123,
+          "notes": 87,
+          "cards": 117,
           "deck": true
         },
         {
           "name": "Endokrinoloji",
-          "notes": 131,
-          "cards": 159,
+          "notes": 133,
+          "cards": 161,
           "deck": true
         },
         {
           "name": "Hematoloji",
-          "notes": 173,
-          "cards": 199,
+          "notes": 169,
+          "cards": 195,
           "deck": true
         },
         {
@@ -8233,8 +8233,8 @@
         },
         {
           "name": "Genel",
-          "notes": 195,
-          "cards": 209,
+          "notes": 210,
+          "cards": 224,
           "deck": false
         }
       ]
@@ -8250,14 +8250,14 @@
       "topics": [
         {
           "name": "Yenidoğan",
-          "notes": 124,
-          "cards": 168,
+          "notes": 122,
+          "cards": 166,
           "deck": true
         },
         {
           "name": "Beslenme ve Gelişme",
-          "notes": 47,
-          "cards": 71,
+          "notes": 45,
+          "cards": 69,
           "deck": true
         },
         {
@@ -8268,8 +8268,8 @@
         },
         {
           "name": "Alerji ve İmmünoloji",
-          "notes": 102,
-          "cards": 135,
+          "notes": 101,
+          "cards": 134,
           "deck": true
         },
         {
@@ -8280,14 +8280,14 @@
         },
         {
           "name": "Genetik",
-          "notes": 48,
-          "cards": 63,
+          "notes": 46,
+          "cards": 61,
           "deck": true
         },
         {
           "name": "Kardiyoloji",
-          "notes": 68,
-          "cards": 82,
+          "notes": 69,
+          "cards": 83,
           "deck": true
         },
         {
@@ -8298,14 +8298,14 @@
         },
         {
           "name": "Gastroenteroloji",
-          "notes": 44,
-          "cards": 52,
+          "notes": 45,
+          "cards": 53,
           "deck": true
         },
         {
           "name": "Nefroloji",
-          "notes": 34,
-          "cards": 39,
+          "notes": 33,
+          "cards": 38,
           "deck": true
         },
         {
@@ -8322,8 +8322,8 @@
         },
         {
           "name": "Hematoloji",
-          "notes": 47,
-          "cards": 57,
+          "notes": 48,
+          "cards": 58,
           "deck": true
         },
         {
@@ -8340,8 +8340,8 @@
         },
         {
           "name": "Genel",
-          "notes": 333,
-          "cards": 363,
+          "notes": 338,
+          "cards": 368,
           "deck": false
         }
       ]
@@ -8357,38 +8357,38 @@
       "topics": [
         {
           "name": "Meme",
-          "notes": 49,
-          "cards": 71,
+          "notes": 46,
+          "cards": 68,
           "deck": true
         },
         {
           "name": "Tiroit",
-          "notes": 36,
-          "cards": 56,
+          "notes": 35,
+          "cards": 54,
           "deck": true
         },
         {
           "name": "Cerrahi Temel Bilimler",
           "notes": 42,
-          "cards": 50,
+          "cards": 52,
           "deck": true
         },
         {
           "name": "Özofagus ve Mide",
-          "notes": 39,
-          "cards": 53,
+          "notes": 40,
+          "cards": 55,
           "deck": true
         },
         {
           "name": "İnce Bağırsak ve Kolorektal",
-          "notes": 75,
-          "cards": 112,
+          "notes": 68,
+          "cards": 102,
           "deck": true
         },
         {
           "name": "Karaciğer, Safra ve Pankreas",
-          "notes": 71,
-          "cards": 98,
+          "notes": 73,
+          "cards": 99,
           "deck": true
         },
         {
@@ -8399,8 +8399,8 @@
         },
         {
           "name": "Travma ve Yanık",
-          "notes": 42,
-          "cards": 50,
+          "notes": 38,
+          "cards": 45,
           "deck": true
         },
         {
@@ -8411,8 +8411,8 @@
         },
         {
           "name": "Genel",
-          "notes": 178,
-          "cards": 212,
+          "notes": 190,
+          "cards": 227,
           "deck": false
         }
       ]
@@ -8464,8 +8464,8 @@
         },
         {
           "name": "Dermatoloji",
-          "notes": 45,
-          "cards": 63,
+          "notes": 44,
+          "cards": 62,
           "deck": true
         },
         {
@@ -8476,8 +8476,8 @@
         },
         {
           "name": "Göz Hastalıkları",
-          "notes": 52,
-          "cards": 65,
+          "notes": 51,
+          "cards": 64,
           "deck": true
         },
         {
@@ -8488,8 +8488,8 @@
         },
         {
           "name": "Üroloji",
-          "notes": 14,
-          "cards": 18,
+          "notes": 13,
+          "cards": 17,
           "deck": true
         },
         {
@@ -8500,8 +8500,8 @@
         },
         {
           "name": "Psikiyatri",
-          "notes": 29,
-          "cards": 38,
+          "notes": 28,
+          "cards": 37,
           "deck": true
         },
         {
@@ -8512,14 +8512,14 @@
         },
         {
           "name": "Radyoloji",
-          "notes": 15,
-          "cards": 15,
+          "notes": 13,
+          "cards": 13,
           "deck": true
         },
         {
           "name": "Genel",
-          "notes": 108,
-          "cards": 123,
+          "notes": 114,
+          "cards": 129,
           "deck": false
         }
       ]
@@ -8535,14 +8535,14 @@
       "topics": [
         {
           "name": "Obstetri",
-          "notes": 227,
-          "cards": 332,
+          "notes": 221,
+          "cards": 321,
           "deck": true
         },
         {
           "name": "Jinekolojik Onkoloji",
           "notes": 87,
-          "cards": 130,
+          "cards": 129,
           "deck": true
         },
         {
@@ -8553,8 +8553,8 @@
         },
         {
           "name": "Anatomi ve Muayene",
-          "notes": 18,
-          "cards": 31,
+          "notes": 17,
+          "cards": 29,
           "deck": true
         },
         {
@@ -8565,20 +8565,20 @@
         },
         {
           "name": "Üreme Endokrinolojisi",
-          "notes": 41,
-          "cards": 63,
+          "notes": 42,
+          "cards": 66,
           "deck": true
         },
         {
           "name": "Jinekolojik Enfeksiyonlar",
-          "notes": 6,
-          "cards": 10,
+          "notes": 7,
+          "cards": 12,
           "deck": true
         },
         {
           "name": "Genel",
-          "notes": 113,
-          "cards": 136,
+          "notes": 118,
+          "cards": 145,
           "deck": false
         }
       ]

@@ -5,6 +5,7 @@ import initSqlJs, { Database } from 'sql.js';
 import { beforeAll, afterAll, describe, expect, it } from 'vitest';
 import { unpackCatalogBytes } from './catalogPack';
 import { catalogPackKey } from './catalogPackKey';
+import { rowsBeforeLaterPasses } from '../test/catalogEditorialPasses';
 import { extractClozeNumbers, renderClozeAnswer, renderClozeQuestion } from './templates';
 
 const review = JSON.parse(readFileSync('docs/catalog-corrections/biyokimya-editorial.json', 'utf8')) as {
@@ -13,12 +14,7 @@ const review = JSON.parse(readFileSync('docs/catalog-corrections/biyokimya-edito
     notes: { noteId: number; fields: Record<string, { after: string }> }[];
 };
 const notes = new Map<number, { guid: string; fields: Record<string, string>; ordinals: number[] }>();
-const beforeLaterPasses = new Map(['mikrobiyoloji', 'patoloji', 'anatomi'].flatMap(course => {
-    const later = JSON.parse(readFileSync(`docs/catalog-corrections/${course}-editorial.json`, 'utf8')) as {
-        noteRowsBefore: (string | number | null)[][];
-    };
-    return later.noteRowsBefore.map(row => [Number(row[0]), row] as const);
-}));
+const beforeLaterPasses = rowsBeforeLaterPasses('biyokimya');
 const hash = (value: string | Uint8Array) => createHash('sha256').update(value).digest('hex');
 const visible = (value: string) => value.replace(/<[^>]*>/g, '');
 let db: Database;
