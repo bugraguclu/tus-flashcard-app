@@ -1,14 +1,6 @@
 /* Study Planner, 2027 TUS Calendar & Pillar Guide section styles.
  * Tokens mirror tailwind.config.mjs (WCAG 2.2 AA verified). */
 
-/* Shared section utilities used on /tus-calisma-rehberi/ */
-.kicker {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #0e7469;
-}
-.kicker-warm { color: #a3430a; }
-
 .meter {
   block-size: 0.5rem;
   border-radius: 999px;

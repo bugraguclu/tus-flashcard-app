@@ -172,20 +172,13 @@ export const BRANCH_STUDY_NOTES: BranchStudyNote[] = [
 ];
 
 export interface StruggleItem {
-  number: string;
-  tag: string;
-  tone: 'teal' | 'warm';
   title: string;
   why: string;
   steps: string[];
-  links: { label: string; href: string }[];
 }
 
 export const TUS_STRUGGLES: StruggleItem[] = [
   {
-    number: '01',
-    tag: 'Kalıcılık ve unutma',
-    tone: 'teal',
     title: 'Okuduğunu unutuyorsun, 11 branşı aynı anda aklında tutamıyorsun',
     why:
       'Fakültede komite sınavları 2–4 haftalık bilgiyi ölçer. TUS ise 6 Temel ve 5 Klinik branşın ince ayrıntılarını aynı gün, 200 soruda sorar. Kalın konu kitabını baştan sona yeniden okumak aylar alır; ilk çalıştığın dersi sınav ayında hiç çalışmamış gibi hissedersin.',
@@ -194,15 +187,8 @@ export const TUS_STRUGGLES: StruggleItem[] = [
       'Hedef hatırlamayı %90’da (0,90) tut. Kartı ne zaman göstereceğine FSRS-6 karar versin; aralık kartın zorluğuna göre dakikalardan aylara kendiliğinden uzar.',
       'İlerlemeni yalnız okuduğun sayfa sayısıyla ölçme. İstatistikler ekranında Genç (aralığı 21 günden kısa) ve Olgun (21 gün ve üzeri) kartlardaki hatırlama oranına da bak.',
     ],
-    links: [
-      { label: 'FSRS-6 rehberi', href: '/yardim/fsrs/' },
-      { label: 'İstatistikleri okuma', href: '/yardim/istatistikler/' },
-    ],
   },
   {
-    number: '02',
-    tag: 'Tekrar borcu',
-    tone: 'warm',
     title: 'Tekrarlar birikiyor, günlük kart sayısı 800–1.000’i geçiyor',
     why:
       `İlk heyecanla günde 100’den fazla yeni kart açarsan, ${megaCards}+ kartlık mega destelere girersen, hedef hatırlamayı %95’in üstüne çekersen ya da birkaç gün üst üste tekrar atlarsan kuyruk büyür. Bir noktadan sonra vadesi gelen kartlar bir günde bitmez.`,
@@ -212,15 +198,8 @@ export const TUS_STRUGGLES: StruggleItem[] = [
       'Birikmiş kartları Filtrelenmiş Deste ile 100 kartlık oturumlara böl. Çabuk toparlanmak için sıralamada Hatırlanabilirlik (azalan) ya da gecikme önceliğini seç.',
       'Ağır günler için Deste Seçenekleri › Kolay günler ayarında Azaltılmış ya da Yok seç. 8 ve daha fazla kez unuttuğun kartları (sülük kartlar) kısalt ya da ikiye böl.',
     ],
-    links: [
-      { label: 'Filtrelenmiş deste rehberi', href: '/yardim/filtrelenmis-deste/' },
-      { label: 'Deste seçenekleri ve sınırlar', href: '/yardim/deste-secenekleri/' },
-    ],
   },
   {
-    number: '03',
-    tag: 'Temel ve Klinik dengesi',
-    tone: 'teal',
     title: 'Klinik istiyorsun diye Temel Bilimleri sona bırakmak (ya da tam tersi)',
     why:
       'Klinik branş isteyen adayların çoğu zamanını Dahiliye, Pediatri ve Genel Cerrahiye verir, 6 Temel dersi sona bırakır. Ama ÖSYM Klinik Tıp Puanını %40 Temel + %60 Klinik ağırlığıyla hesaplar. Temel netin düşerse Klinik puanın da düşer.',
@@ -229,15 +208,8 @@ export const TUS_STRUGGLES: StruggleItem[] = [
       `İlk turda son 6 TUS’ta çözüm desteği yüksek olan derslerle başla: Farmakoloji (${destekPct('Farmakoloji')}), Biyokimya (${destekPct('Biyokimya')}), Mikrobiyoloji (${destekPct('Mikrobiyoloji')}) ve Pediatri (${destekPct('Pediatri')}).`,
       `Anatomi (${destekPct('Anatomi')}), Küçük Stajlar (${destekPct('Küçük Stajlar')}) ve Genel Cerrahi (${destekPct('Genel Cerrahi')}) gibi derslerde kart tekrarının yanına görsel atlas ve klinik vaka sorusu ekle.`,
     ],
-    links: [
-      { label: 'Puan ağırlıklarını hesapla', href: '/puan-hesapla/' },
-      { label: 'Kronometre ve takvim', href: '/yardim/kronometre/' },
-    ],
   },
   {
-    number: '04',
-    tag: 'İntörnlük, nöbet ve tükenmişlik',
-    tone: 'warm',
     title: 'Nöbet ve ağır staj haftalarında “ya hep ya hiç” deyip bırakmak',
     why:
       'Haftanın 7 gününe aynı yüksek hedefi yazan program ilk 24–36 saatlik nöbette, sınav haftasında ya da hastalandığında bozulur. Bir gün aksayınca suçluluk duyarsın ve haftanın kalanını da bırakırsın.',
@@ -246,15 +218,8 @@ export const TUS_STRUGGLES: StruggleItem[] = [
       'Kronometre’de 50 dakika çalışma, 10 dakika mola hatırlatıcısını kullan. Kendine günlük bir üst sınır koy ve onu aşma.',
       'Nöbet ertesi yorgunken konu okumaya zorlanma; 15–20 dakikada vadesi gelen kartları bitir. Ritmi korumak, sıfırdan başlamaktan çok daha kolaydır.',
     ],
-    links: [
-      { label: 'Haftada 5–6 gün planı kur', href: '/calisma-plani/' },
-      { label: 'Ayarlar ve hatırlatmalar', href: '/yardim/ayarlar/' },
-    ],
   },
   {
-    number: '05',
-    tag: 'Kaynak dağınıklığı ve pasif okuma',
-    tone: 'teal',
     title: 'Çok kaynak arasında boğulmak ve altını çizince öğrendiğini sanmak',
     why:
       'Aynı ders için farklı dershane kitaplarını, PDF özetleri, video notlarını ve 25.000+ kartlık paylaşılan desteleri birlikte götürmeye çalışırsan hiçbiri bitmez. Metni fosforlu kalemle okumak da yanıltır: konu tanıdık gelir ama şıklardaki klinik ayrımı hatırlatmaz.',
@@ -263,15 +228,8 @@ export const TUS_STRUGGLES: StruggleItem[] = [
       `Son 6 TUS verisinde konu kapsamı ${pct(refSummary.overall.konuKapsamiOran)}, çözüm desteği ${pct(refSummary.overall.destekOran)}. Aradaki fark şunu gösterir: konuyu görmüş olmak yetmez, sorunun sorduğu ayırt edici bilgiyi kendin hatırlaman gerekir.`,
       'Notlarında eksik gördüğün yerleri uzun paragraf yerine tek bilgi soran kısa kartlara çevir. Yanlış cevapladığın kartta Zor’a değil, her zaman Tekrar’a bas.',
     ],
-    links: [
-      { label: 'Çalışma ekranı ve değerlendirme', href: '/yardim/calisma-ekrani/' },
-      { label: 'Kendi kartını ekleme', href: '/yardim/kart-ekleme/' },
-    ],
   },
   {
-    number: '06',
-    tag: 'Deneme platosu (55–65 bandı)',
-    tone: 'warm',
     title: 'Deneme netleri aynı aralıkta takılıp kalıyor',
     why:
       'Çoğu aday haftada çözdüğü soru sayısını artırır ama yanlışlarının neden çıktığına bakmaz. Aynı iki şık arasında kalıp tekrar tekrar yanlış yaptığın klinik ayrımları düzeltmedikçe netlerin 55–65 bandında kalır.',
@@ -280,15 +238,8 @@ export const TUS_STRUGGLES: StruggleItem[] = [
       'Puan en hızlı (B) grubundan gelir. Karıştırdığın iki hastalığı ya da ilacı kıyaslayan tek cümlelik kartlar yaz ve “deneme-yanlis” etiketiyle topla.',
       'Kartlarım arama ekranında bu etiketi ya da en çok hata yaptığın dersin alt destesini filtrele. 7–10 gün sonra kendini yeniden sına.',
     ],
-    links: [
-      { label: 'Kartlarım ve arama filtreleri', href: '/yardim/kartlarim-ve-arama/' },
-      { label: 'Son 6 TUS referans kanıtları', href: '/referanslar/' },
-    ],
   },
   {
-    number: '07',
-    tag: 'Son 30–60 gün paniği',
-    tone: 'teal',
     title: 'Sınav yaklaşırken yeni kaynak açmak ve oturmuş bilgiyi kaybetmek',
     why:
       'Son ayda kaygı artar. “Ya buradan soru gelirse” diye yeni özet kitapçıklara ya da yüzlerce yeni karta yönelirsin. Son 3–4 haftada açtığın yüzlerce kart sınava kadar oturmaz; asıl işe yarayan mevcut tekrarların da aksar.',
@@ -296,10 +247,6 @@ export const TUS_STRUGGLES: StruggleItem[] = [
       'İlk turu sınavdan en az 14–30 gün önce bitirecek şekilde tampon bırak. Bu dönemde yeni kart açma.',
       'Son 2–3 haftada tekrar takvimini bozmadan hedefli çalışmak için Filtrelenmiş Deste › Önizleme modunu ve Özel Çalışma seçeneklerini kullan.',
       'Son 6–10 TUS’un çıkmış sorularını süre tutarak çöz (Kronometre › Deneme oturumu). Sınava 48 saat kala ağır yeni konu açma; dinlen ve kısa tekrarlar yap.',
-    ],
-    links: [
-      { label: 'Tampon günlü planını hesapla', href: '/calisma-plani/' },
-      { label: 'Önizleme ve özel çalışma', href: '/yardim/filtrelenmis-deste/' },
     ],
   },
 ];
@@ -310,7 +257,6 @@ export interface WorkflowStep {
   summary: string;
   detail: string;
   href: string;
-  linkLabel: string;
 }
 
 export const WORKFLOW_STEPS: WorkflowStep[] = [
@@ -321,7 +267,6 @@ export const WORKFLOW_STEPS: WorkflowStep[] = [
     detail:
       'Günlük yeni kart sayını üç şeye göre seç: sınava kalan gün, çalışacağın dersler ve haftada kaç gün yeni kart açabileceğin. Sınavdan önceki son 14–30 günde yeni kart açma; bu süreyi tekrara ve denemeye ayır.',
     href: '/calisma-plani/',
-    linkLabel: 'FSRS-6 planlayıcıyı aç',
   },
   {
     step: '02',
@@ -330,7 +275,6 @@ export const WORKFLOW_STEPS: WorkflowStep[] = [
     detail:
       'Cevabı açmadan önce aklından söyle. Hatırlayamadıysan Zor’a değil, her zaman Tekrar’a bas. Nöbet ya da yoğun staj günlerinde yeni kartı 0 yap, yalnız vadesi gelen tekrarları bitir; düzenin bozulmaz.',
     href: '/yardim/calisma-ekrani/',
-    linkLabel: 'Çalışma ekranı rehberi',
   },
   {
     step: '03',
@@ -339,7 +283,6 @@ export const WORKFLOW_STEPS: WorkflowStep[] = [
     detail:
       'Konu okuma, çıkmış soru ve deneme sürelerini Kronometre’de ders ders kaydet. Çalışma Takvimi kart tekrarlarınla bu oturumları çift saymadan aynı yerde gösterir.',
     href: '/yardim/kronometre/',
-    linkLabel: 'Kronometre rehberi',
   },
   {
     step: '04',
@@ -348,7 +291,6 @@ export const WORKFLOW_STEPS: WorkflowStep[] = [
     detail:
       'Her denemede iki şık arasında kaldığın ayrımları kısa kartlara yaz. Sınavdan önceki son haftalarda bu kartları Filtrelenmiş Deste’nin Önizleme moduyla tara; tekrar takvimin bozulmaz.',
     href: '/yardim/filtrelenmis-deste/',
-    linkLabel: 'Filtrelenmiş deste rehberi',
   },
 ];
 
@@ -406,12 +348,7 @@ export const OFFICIAL_SOURCES = [
   {
     title: 'Resmî Gazete — Tıpta ve Diş Hekimliğinde Uzmanlık Eğitimi Yönetmeliği',
     url: 'https://www.resmigazete.gov.tr/eskiler/2022/09/20220903-2.htm',
-    note: 'Puan kesintisi ve yerleştirme hükümleri (kesinti başlangıçta %2)',
-  },
-  {
-    title: 'Resmî Gazete — Uzmanlık Eğitimi Yönetmeliğinde Değişiklik (16 Mayıs 2024, Sayı 32548)',
-    url: 'https://www.resmigazete.gov.tr/eskiler/2024/05/20240516-1.htm',
-    note: 'Kesinti oranını %2’den %5’e çıkaran değişiklik',
+    note: 'Puan kesintisi (%5) ve yerleştirme hükümleri',
   },
   {
     title: 'ACM KDD ’22 — A Stochastic Shortest Path Algorithm for Optimizing Spaced Repetition Scheduling',

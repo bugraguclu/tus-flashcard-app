@@ -6,12 +6,11 @@ import {
   estimateReadingMinutes,
 } from '../../data/rehber/index';
 import { breadcrumbList, collectionPage } from '../../lib/schema';
-import { effectiveDate, formatTrDate, pageSources } from '../../lib/lastmod';
+import { effectiveDate, pageSources } from '../../lib/lastmod';
 
 const origin = new URL(Astro.site!).origin;
 // Same sources the sitemap reads for /rehber/ (pages.ts), so the two dates always agree.
 const modDate = effectiveDate(pageSources('rehber'));
-const modLabel = formatTrDate(modDate);
 
 const CATEGORY_IDS: Record<string, string> = {
   'Sınav ve Takvim': 'sinav-ve-takvim',
@@ -50,7 +49,7 @@ const colSchema = collectionPage(origin, {
   schema={[crumbs, colSchema]}
 >
   <section class="bg-white border-b border-line py-10 sm:py-14">
-    <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
+    <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-6">
       <nav aria-label="Sayfa konumu" class="mb-3">
         <ol class="flex flex-wrap items-center gap-y-1 text-xs text-inkMuted">
           <li class="inline-flex items-center">
@@ -71,16 +70,7 @@ const colSchema = collectionPage(origin, {
       <p class="text-inkMuted mt-3 max-w-2xl leading-relaxed">
         Başvurudan tercihe, sınav gününden son iki aya kadar {REHBER_ARTICLES.length} kısa yazı. Her biri ÖSYM kılavuzuna, Resmî Gazete'ye ya da açık verimize dayanır.
       </p>
-      <div class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-inkMuted">
-        <span>
-          Son güncelleme: <time datetime={modDate} class="font-semibold text-ink">{modLabel}</time>
-        </span>
-        <span>
-          Hazırlayan:{' '}
-          <span class="font-semibold text-ink">TusAnkiM</span>
-        </span>
-      </div>
-      <nav aria-label="Konular" class="mt-6">
+      <nav aria-label="Konular" class="mt-4">
         <ul class="flex flex-wrap gap-x-5 gap-y-0 text-sm" data-rehber-topics>
           {groups.map((g) => (
             <li>
@@ -92,7 +82,7 @@ const colSchema = collectionPage(origin, {
     </div>
   </section>
 
-  <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10 py-12 space-y-14">
+  <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-6 py-12 space-y-14">
     {groups.map((g) => (
       <section id={g.id} aria-labelledby={`${g.id}-heading`} class="scroll-mt-24">
         <h2 id={`${g.id}-heading`} class="display text-xl text-ink tracking-tight">{g.cat}</h2>
@@ -115,22 +105,5 @@ const colSchema = collectionPage(origin, {
         </div>
       </section>
     ))}
-
-    <aside class="border-t border-line pt-5 text-sm text-inkMuted leading-relaxed">
-      <h2 class="display text-base text-ink">Araçlar ve referanslar</h2>
-      <p class="mt-2">
-        Kalan güne göre günlük yükü{' '}
-        <a href="/calisma-plani/" class="font-semibold text-teal underline hover:text-tealDark">çalışma planı aracı</a>,
-        netlerinden puanını{' '}
-        <a href="/puan-hesapla/" class="font-semibold text-teal underline hover:text-tealDark">puan hesaplayıcı</a>{' '}
-        çıkarır. Çıkmış soruların dağılımına{' '}
-        <a href="/tus-cikmis-sorular-ve-analiz/" class="font-semibold text-teal underline hover:text-tealDark">TUS çıkmış sorular analizinden</a>{' '}
-        ve <a href="/referanslar/" class="font-semibold text-teal underline hover:text-tealDark">11 dersin referans cetvelinden</a>{' '}
-        bakabilirsin. Diğer sayfalar:{' '}
-        <a href="/tus-taban-puanlari-ve-kontenjan/" class="font-semibold text-teal underline hover:text-tealDark">TUS taban puanları</a>,{' '}
-        <a href="/tus-spot-bilgiler/" class="font-semibold text-teal underline hover:text-tealDark">TUS spot bilgiler</a> ve{' '}
-        <a href="/yardim/" class="font-semibold text-teal underline hover:text-tealDark">21 yardım rehberi</a>.
-      </p>
-    </aside>
   </div>
 </Layout>

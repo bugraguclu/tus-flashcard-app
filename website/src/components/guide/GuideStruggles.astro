@@ -2,10 +2,9 @@
 import { TUS_STRUGGLES } from '../../data/studyGuide';
 ---
 <section id="zorluklar" tabindex="-1" class="guide-section py-14 sm:py-20 bg-white border-b border-line" aria-labelledby="struggles-heading">
-  <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
+  <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-6">
     <div class="max-w-3xl">
-      <p class="guide-kicker guide-kicker-warm">Adayların takıldığı yerler</p>
-      <h2 id="struggles-heading" class="display text-section tracking-tightest text-ink mt-3">
+      <h2 id="struggles-heading" class="display text-section tracking-tightest text-ink">
         TUS çalışırken en çok zorlanılan 7 alan ve çözümleri
       </h2>
       <p class="text-inkMuted mt-3 leading-relaxed">
@@ -16,37 +15,18 @@ import { TUS_STRUGGLES } from '../../data/studyGuide';
 
     <div class="mt-8 grid lg:grid-cols-2 gap-x-10 gap-y-8">
       {TUS_STRUGGLES.map((item) => (
-        <article class="border-t border-line pt-5 flex flex-col justify-between gap-4">
-          <div class="space-y-3">
-            <p class:list={[
-              'text-sm font-semibold',
-              item.tone === 'warm' ? 'text-warm' : 'text-teal',
-            ]}>
-              Zorluk {item.number} · {item.tag}
-            </p>
-            <h3 class="display text-lg text-ink leading-snug">{item.title}</h3>
-            <p class="text-sm text-inkMuted leading-relaxed">
-              <strong class="text-ink">Neden olur?</strong> {item.why}
-            </p>
-            <div class="pt-1">
-              <p class="text-sm font-semibold text-ink mb-2">Ne yapmalısın?</p>
-              <ol class="space-y-1.5 text-sm text-inkMuted leading-relaxed list-decimal pl-5">
-                {item.steps.map((step) => (
-                  <li>{step}</li>
-                ))}
-              </ol>
-            </div>
-          </div>
-
-          <div class="pt-3 border-t border-line flex flex-wrap gap-x-5 gap-y-1">
-            {item.links.map((lnk) => (
-              <a
-                href={lnk.href}
-                class="inline-flex items-center min-h-[2.75rem] text-xs font-semibold text-teal hover:text-tealDark underline underline-offset-4"
-              >
-                {lnk.label} →
-              </a>
-            ))}
+        <article class="border-t border-line pt-5 space-y-3">
+          <h3 class="display text-lg text-ink leading-snug">{item.title}</h3>
+          <p class="text-sm text-inkMuted leading-relaxed">
+            <strong class="text-ink">Neden olur?</strong> {item.why}
+          </p>
+          <div class="pt-1">
+            <p class="text-sm font-semibold text-ink mb-2">Ne yapmalısın?</p>
+            <ol class="space-y-1.5 text-sm text-inkMuted leading-relaxed list-decimal pl-5">
+              {item.steps.map((step) => (
+                <li>{step}</li>
+              ))}
+            </ol>
           </div>
         </article>
       ))}

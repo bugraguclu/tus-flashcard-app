@@ -42,23 +42,27 @@ const instagram = SOCIAL.find((social) => social.icon === 'instagram');
 <style>
   .site-footer { border-top: 1px solid #dde1e4; background: #fff; color: #596166; }
   .footer-inner { width: min(1120px, calc(100% - 3rem)); margin-inline: auto; padding-block: 2.5rem 2rem; }
-  .footer-grid { display: grid; grid-template-columns: 1.3fr repeat(4, minmax(0, 1fr)); gap: 2rem; }
-  .footer-brand { color: #24292c; font-size: 1.125rem; font-weight: 600; }
-  .footer-about p { margin-top: .25rem; font-size: .875rem; line-height: 1.6; }
-  h2 { color: #24292c; font-size: .8125rem; font-weight: 600; margin-bottom: .25rem; }
-  a { display: inline-flex; align-items: center; min-height: 2.75rem; font-size: .875rem; }
-  li a { min-height: 2.25rem; }
+  .footer-grid { display: grid; grid-template-columns: 1.05fr 1fr 1.6fr .78fr .67fr; align-items: start; gap: 2rem; }
+  .footer-brand { display: inline-flex; align-items: center; color: #24292c; font-size: 1.125rem; font-weight: 600; line-height: 1.5rem; min-height: 1.5rem; margin-bottom: .5rem; }
+  .footer-about p { font-size: .875rem; line-height: 1.4; padding-block: .5rem; }
+  h2 { color: #24292c; font-size: .8125rem; font-weight: 600; line-height: 1.5rem; margin-bottom: .5rem; }
+  ul { display: grid; gap: .125rem; }
+  li a { display: inline-flex; align-items: center; min-height: 2.25rem; padding-block: .375rem; font-size: .875rem; line-height: 1.4; }
   a:hover { color: #0e7469; }
   .footer-disclaimer { font-size: .8125rem; line-height: 1.75; margin-block: 1.5rem 1rem; padding-top: 1rem; border-top: 1px solid #e9ecee; }
   .footer-bottom { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 2rem; border-top: 1px solid #e9ecee; padding-top: 1rem; font-size: .8125rem; }
   .footer-bottom nav { display: flex; flex-wrap: wrap; gap: .25rem 1.5rem; }
+  .footer-bottom nav a { display: inline-flex; align-items: center; min-height: 2.75rem; font-size: .875rem; }
   @media (max-width: 900px) {
     .footer-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .footer-about { grid-column: 1 / -1; }
   }
+  @media (max-width: 600px), (pointer: coarse) {
+    .footer-brand { min-height: 2.75rem; margin-bottom: 0; }
+    li a { min-height: 2.75rem; }
+  }
   @media (max-width: 600px) {
     .footer-inner { width: calc(100% - 2.5rem); }
-    li a { min-height: 2.75rem; }
     .footer-bottom { align-items: flex-start; flex-direction: column; }
   }
 </style>

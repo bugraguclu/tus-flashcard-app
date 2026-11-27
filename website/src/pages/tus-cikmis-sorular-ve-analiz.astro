@@ -1,14 +1,12 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { SITE } from '../config';
 import { getBranches } from '../data/branches';
 import refSummary from '../data/generated/references-summary.json';
 import { breadcrumbList } from '../lib/schema';
-import { effectiveDate, formatTrDate, pageSources } from '../lib/lastmod';
+import { effectiveDate, pageSources } from '../lib/lastmod';
 
 const origin = new URL(Astro.site!).origin;
 const modDate = effectiveDate(pageSources('cikmis-sorular'));
-const modLabel = formatTrDate(modDate);
 const branches = getBranches();
 
 const crumbs = breadcrumbList(origin, [
@@ -42,7 +40,7 @@ const pre = refSummary.preExam2026_2;
   schema={[crumbs, datasetSchema]}
 >
   <section class="bg-white border-b border-line py-10 sm:py-14">
-    <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
+    <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-6">
       <nav aria-label="Sayfa konumu" class="mb-3">
         <ol class="flex flex-wrap items-center gap-y-1 text-xs text-inkMuted">
           <li class="inline-flex items-center">
@@ -64,22 +62,12 @@ const pre = refSummary.preExam2026_2;
         Son 6 TUS’taki (<strong>2024/1–2026/2</strong>) <strong>1.195 soruyu</strong> inceledik. Aşağıda soruların 11 ÖSYM branşına dağılımını görürsün.
         Yanında 9.575 kartlık BKA TUS kataloğunun (<code>{refSummary.katalogCommit}</code>) kaç soruda çözüm desteği verdiği ve kaç sorunun konusunu kapsadığı ayrı ayrı yazar.
       </p>
-
-      <div class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-inkMuted">
-        <span>
-          Son güncelleme: <time datetime={modDate} class="font-semibold text-ink">{modLabel}</time>
-        </span>
-        <span>
-          Hazırlayan:{' '}
-          <span class="font-semibold text-ink">TusAnkiM</span>
-        </span>
-      </div>
     </div>
   </section>
 
   <!-- Copyright & Methodology Boundary Banner -->
   <section class="bg-white border-b border-line py-6" aria-labelledby="copyright-heading">
-    <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
+    <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-6">
       <div class="border-t border-line pt-5 text-xs sm:text-sm text-ink leading-relaxed">
         <h2 id="copyright-heading" class="display text-base text-ink mb-1">Soru metinleri neden burada yok?</h2>
         <p>
@@ -92,7 +80,7 @@ const pre = refSummary.preExam2026_2;
 
   <!-- Key Summary Strip -->
   <section class="bg-white border-b border-line py-8" aria-labelledby="summary-metrics-heading">
-    <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
+    <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-6">
       <h2 id="summary-metrics-heading" class="sr-only">Son 6 TUS referans özeti</h2>
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-x-10 gap-y-8">
         <div class="border-t border-line pt-5">
@@ -126,7 +114,7 @@ const pre = refSummary.preExam2026_2;
   </section>
 
   <!-- Main Tables -->
-  <section class="max-w-content mx-auto px-5 sm:px-6 lg:px-10 py-12 space-y-14">
+  <section class="max-w-content mx-auto px-5 sm:px-6 lg:px-6 py-12 space-y-14">
     <!-- Table 1: 11 ÖSYM Branches -->
     <div class="space-y-4">
       <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
@@ -287,39 +275,6 @@ const pre = refSummary.preExam2026_2;
             </p>
           </div>
         ))}
-      </div>
-    </div>
-
-    <!-- Cross-links & Official Source -->
-    <div class="border-t border-line pt-5 flex flex-col lg:flex-row lg:items-center justify-between gap-5">
-      <div class="max-w-2xl space-y-1.5">
-        <h2 class="display text-lg text-ink">Bu analizle ne yapabilirsin?</h2>
-        <p class="text-sm text-inkMuted leading-relaxed">
-          Çıkmış sorularla eşleşen 11 örnek kartı hemen dene, netlerini puana çevir ya da 2025–2026 ÖSYM taban puanlarına bak.
-        </p>
-        <p class="text-xs text-inkMuted">
-          {SITE.disclaimer} Sınıflandırma yapay zekâ destekli ön değerlendirmedir; bağımsız hekim editör onayı henüz tamamlanmadı.
-        </p>
-      </div>
-      <div class="flex flex-wrap gap-x-5 gap-y-0 shrink-0">
-        <a href="/referanslar/" class="inline-flex items-center min-h-[2.75rem] px-4 rounded-lg bg-teal text-white text-xs font-semibold hover:bg-tealDark transition">
-          1.195 referans kataloğu →
-        </a>
-        <a href="/tus-spot-bilgiler/" class="text-link">
-          TUS spot bilgiler →
-        </a>
-        <a href="/puan-hesapla/" class="text-link">
-          TUS puan hesapla →
-        </a>
-        <a href="/tus-taban-puanlari-ve-kontenjan/" class="text-link">
-          Taban puanları →
-        </a>
-        <a href="/rehber/tus-hangi-dersten-kac-soru-cikar/" class="text-link">
-          Hangi dersten kaç soru çıkar? →
-        </a>
-        <a href="/rehber/tus-ders-ders-kart-destegi/" class="text-link">
-          Ders ders kart desteği →
-        </a>
       </div>
     </div>
   </section>

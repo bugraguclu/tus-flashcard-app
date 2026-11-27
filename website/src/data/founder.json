@@ -3,7 +3,7 @@
   "name": "TusAnkiM",
   "role": "TUS için aralıklı tekrar",
   "quote": "Önce kartlara bak, sonra nasıl hazırladığımızı oku. Güvenirsen günlük tekrarını burada kurarsın.",
-  "letterTitle": "Neden TusAnkiM’i kurduk?",
+  "letterTitle": "Hakkımızda",
   "letterParagraphs": [
     "TUS’a kartla hazırlanmak isteyen biri üç şeye takılıyor: hangi desteye güveneceğini bilemiyor, iPhone’da rahat çalışacağı bir uygulama bulmakta zorlanıyor ve ne kadar çalıştığını başka bir yerde tutuyor. TusAnkiM’i bu üçünü tek uygulamada çözmek için kurduk. Hazır koleksiyondan çalışabilir, kendi kartlarını yazabilir, kendi Anki destelerini getirebilirsin.",
     "Uygulamayı iPhone için geliştiriyoruz; bugün tarayıcıdan da kullanabilirsin. Kartların, çalışma geçmişin ve kronometre kayıtların cihazında durur. Hangi kartı hangi gün tekrar edeceğini FSRS-6 hesaplar. Kronometre ve çalışma takvimi de o gün gerçekten ne kadar çalıştığını gösterir.",

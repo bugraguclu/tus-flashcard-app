@@ -37,8 +37,7 @@ const faqSchema = {
       <span class="text-ink font-semibold">Sıkça Sorulan Sorular</span>
     </nav>
 
-    <div class="section-num">{faqs.page.kicker}</div>
-    <h1 class="display text-page-title tracking-tightest text-ink mt-2">{faqs.page.title}</h1>
+    <h1 class="display text-page-title tracking-tightest text-ink">{faqs.page.title}</h1>
     <p class="text-inkMuted mt-3 leading-relaxed">{faqs.page.lead}</p>
 
     <p class="text-inkMuted mt-3 leading-relaxed">Kart gelmiyor ya da bir dosya açılmıyor mu? O zaman <a href="/yardim/sss/" class="text-link">sorun giderme rehberine bak</a>.</p>
@@ -48,7 +47,7 @@ const faqSchema = {
         <input id="faq-q" type="search" autocomplete="off" placeholder={faqs.page.searchPlaceholder} class="flex-1 min-w-0 py-3 text-base bg-transparent outline-none" />
         <button id="faq-clear" type="button" hidden class="text-link">Temizle</button>
       </div>
-      <p id="faq-count" role="status" class="text-sm text-inkMuted mt-2">Tüm {faqs.items.length} soru listeleniyor</p>
+      <p id="faq-count" role="status" class="sr-only">Tüm {faqs.items.length} soru listeleniyor</p>
     </search>
     <p id="faq-empty" hidden class="text-inkMuted mt-8 leading-relaxed">Buna uyan bir soru yok. Aramanı kısalt ya da <a href="/destek/" class="text-link">destek sayfasından yazabilirsin</a>.</p>
     <div class="mt-10"><FaqList /></div>

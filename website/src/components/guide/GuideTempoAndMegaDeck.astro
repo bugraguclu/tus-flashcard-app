@@ -90,11 +90,10 @@ const yTicks = [0, maxY / 2, maxY];
 const xTicks = [1, 60, 120, 180];
 ---
 <section id="tempo-ve-profiller" tabindex="-1" class="guide-section py-14 sm:py-20 bg-surfaceSoft border-b border-line" aria-labelledby="tempo-heading">
-  <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
+  <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-6">
     <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
       <div class="max-w-2xl">
-        <p class="guide-kicker">Çalışma temposu · 4 aday profili</p>
-        <h2 id="tempo-heading" class="display text-section tracking-tightest text-ink mt-3">
+        <h2 id="tempo-heading" class="display text-section tracking-tightest text-ink">
           Sınava kaç gün var? Temponu ona göre seç
         </h2>
         <p class="text-inkMuted mt-3 leading-relaxed">
@@ -124,12 +123,9 @@ const xTicks = [1, 60, 120, 180];
             <li>Haftada <strong>{sim.input.studyDaysPerWeek} gün</strong> · son <strong>{sim.target.reviewOnlyTailDays} gün</strong> tampon</li>
           </ul>
           <p class="mt-4 text-sm text-inkMuted leading-relaxed flex-1">{preset.tip}</p>
-          <div class="mt-4 pt-3 border-t border-lineLight flex flex-col gap-1">
+          <div class="mt-4 pt-3 border-t border-lineLight">
             <a href={plannerUrl} class="inline-flex items-center min-h-[2.75rem] text-sm font-semibold text-teal hover:text-tealDark underline underline-offset-4">
               Bu profili planlayıcıda aç →
-            </a>
-            <a href={preset.href} class="inline-flex items-center min-h-[2.75rem] text-xs font-medium text-inkMuted hover:text-teal underline underline-offset-4">
-              {preset.linkLabel}
             </a>
           </div>
         </li>

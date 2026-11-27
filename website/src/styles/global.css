@@ -26,12 +26,10 @@ body {
 .page-intro { background: #fff; }
 .page-intro h1 { text-wrap: balance; }
 .page-intro nav[aria-label="Sayfa konumu"] { margin-bottom: 1.25rem; }
-.page-intro .section-num { color: #596166; font-weight: 500; }
 
 .site-container { width: min(1120px, calc(100% - 3rem)); margin-inline: auto; }
 .text-link { display: inline-flex; align-items: center; min-height: 2.75rem; font-size: .875rem; font-weight: 500; color: #0e7469; text-decoration: underline; text-underline-offset: 4px; }
 .text-link:hover { color: #0b5e55; }
-.eyebrow { color: #0e7469; font-size: .875rem; font-weight: 500; margin-bottom: 1rem; }
 select {
   appearance: none;
   -webkit-appearance: none;
@@ -54,7 +52,6 @@ select {
 /* Shared surfaces stay quiet; content and controls carry the hierarchy. */
 .hero-bg { background: #fff; }
 .lift { transition: border-color 160ms ease; }
-.section-num { font-weight: 600; font-size: .875rem; letter-spacing: normal; color: #0e7469; }
 .button-primary, .button-secondary {
   display: inline-flex; align-items: center; justify-content: center;
   min-height: 2.75rem; padding: .75rem 1.125rem;

@@ -242,7 +242,14 @@ for (const anchor of ['hizli-ozet', 'tempo-ve-profiller', 'mega-deste-kiyasi', '
 check(guideHtml.includes('data-demo-simulator') && guideHtml.includes('data-decks-url="/data/demo-decks.json"'), 'tus-calisma-rehberi: missing embedded tablet card demo');
 check(guideHtml.includes('Bitirilebilir deste, bitmeyen desteden önce gelir'), 'tus-calisma-rehberi: missing migrated mega-deck comparison');
 check(guideHtml.includes('27 Mart 2027') && guideHtml.includes('22 Ağustos 2027'), 'tus-calisma-rehberi: missing 2027 TUS exam dates');
-check(guideHtml.includes('Zorluk 07') && guideHtml.includes('data-faq-toggle-all'), 'tus-calisma-rehberi: missing 7 struggles or FAQ expand/collapse control');
+const guideStrugglesSection = guideVisible.match(/<section[^>]*id="zorluklar"[\s\S]*?<\/section>/)?.[0] ?? '';
+const struggleArticleCount = (guideStrugglesSection.match(/<article\b/g) ?? []).length;
+check(
+  struggleArticleCount === 7 &&
+    guideStrugglesSection.includes('Sınav yaklaşırken yeni kaynak açmak ve oturmuş bilgiyi kaybetmek') &&
+    guideHtml.includes('data-faq-toggle-all'),
+  `tus-calisma-rehberi: missing 7 struggles (got ${struggleArticleCount}) or FAQ expand/collapse control`,
+);
 check(guideHtml.includes('76/200') && guideHtml.includes('82/200') && guideHtml.includes('a78ae1f'), 'tus-calisma-rehberi: missing honest pre-exam/current reference distinction');
 check(guideHtml.includes('property="og:type" content="article"') && guideHtml.includes('property="article:modified_time"'), 'tus-calisma-rehberi: missing Open Graph article metadata');
 check(!/`[^`]+`/.test(guideVisible), 'tus-calisma-rehberi: raw markdown backticks leaked into visible HTML');

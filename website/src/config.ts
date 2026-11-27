@@ -30,7 +30,6 @@ export const SITE = {
   disclaimer:
     'TusAnkiM bağımsız bir projedir; Anki veya Ankitects ile bağlantılı değildir.',
   webAppUrl,
-  githubIssuesUrl: 'https://github.com/bugraguclu/tus-flashcard-app/issues',
   // Replace with live App Store link once published; currently directs to iPhone/Web onboarding anchor.
   appStoreUrl: webAppUrl,
   email: 'destek@tusankim.com',

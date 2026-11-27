@@ -122,8 +122,6 @@ export interface PlannerPreset {
   horizonLabel: string;
   examId?: string;
   tip: string;
-  href: string;
-  linkLabel: string;
   patch: Partial<PlannerInput>;
 }
 

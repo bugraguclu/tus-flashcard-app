@@ -93,8 +93,6 @@ export const PLANNER_PRESETS: PlannerPreset[] = [
     title: 'Stajyer · 4.–5. sınıf',
     horizonLabel: '365 gün',
     tip: 'Stajınla birlikte ilerle. Haftada 1 gün mola ver, günlük kart sayını düşük tut, son ay yalnız tekrar yap.',
-    href: '/yardim/fsrs/',
-    linkLabel: 'Tekrar takvimi nasıl çalışır?',
     patch: {
       mode: 'exam',
       days: 365,
@@ -112,8 +110,6 @@ export const PLANNER_PRESETS: PlannerPreset[] = [
     horizonLabel: '270 gün',
     examId: '2027-2',
     tip: 'Nöbet günlerinde yeni kart açma, yalnız vadesi gelen tekrarları bitir; son 3 hafta denemeye kalsın.',
-    href: '/yardim/deste-secenekleri/',
-    linkLabel: 'Günlük sınırları ayarla',
     patch: {
       mode: 'exam',
       days: 270,
@@ -130,8 +126,6 @@ export const PLANNER_PRESETS: PlannerPreset[] = [
     title: 'Mezun · pratisyen',
     horizonLabel: '180 gün',
     tip: 'Konu çalışmanın yanına günde 60 yeni kart ekle; ilk tur 160. günde biter, son 20 gün yalnız tekrar kalır.',
-    href: '/yardim/kronometre/',
-    linkLabel: 'Kronometre ve çalışma planı',
     patch: {
       mode: 'exam',
       days: 180,
@@ -149,8 +143,6 @@ export const PLANNER_PRESETS: PlannerPreset[] = [
     horizonLabel: '120 gün',
     examId: '2027-1',
     tip: 'Süre dar. İlk turu son 2 haftadan önce bitir, deneme haftalarında zorlandığın konuları filtrele.',
-    href: '/yardim/filtrelenmis-deste/',
-    linkLabel: 'Zayıf konuya odaklan',
     patch: {
       mode: 'exam',
       days: 120,

@@ -4,23 +4,6 @@ import catalog from '../../data/generated/catalog.json';
 import { GUIDE_FAQS, OFFICIAL_SOURCES } from '../../data/studyGuide';
 import { num } from '../../lib/format';
 
-interface Props {
-  datePublished?: string;
-  dateModified?: string;
-}
-
-const { datePublished, dateModified } = Astro.props;
-
-const formatTrDate = (iso?: string) => {
-  if (!iso) return null;
-  const parsed = new Date(`${iso}T00:00:00Z`);
-  if (Number.isNaN(parsed.getTime())) return iso;
-  return new Intl.DateTimeFormat('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(parsed);
-};
-
-const pubLabel = formatTrDate(datePublished);
-const modLabel = formatTrDate(dateModified);
-
 const helpfulGuides = [
   { title: 'Hızlı başlangıç', text: 'Hazır TUS paketini aç, ilk desteni seç ve çalışmaya başla.', href: '/yardim/hizli-baslangic/' },
   { title: 'FSRS-6 tekrar takvimi', text: 'Hedef hatırlama oranı, öğrenme adımları ve optimizasyon.', href: '/yardim/fsrs/' },
@@ -32,9 +15,8 @@ const helpfulGuides = [
 ---
 <!-- Guide FAQ Accordion (native details/summary, Expand/Collapse All) -->
 <section id="rehber-sss" tabindex="-1" class="guide-section py-14 sm:py-20 bg-surfaceSoft border-b border-line" aria-labelledby="guide-faq-heading">
-  <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10 grid lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+  <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-6 grid lg:grid-cols-12 gap-8 lg:gap-12 items-start">
     <div class="lg:col-span-4 space-y-4">
-      <p class="guide-kicker">Sık Sorulanlar</p>
       <h2 id="guide-faq-heading" class="display text-section tracking-tightest text-ink">
         TUS çalışması hakkında sık sorulan sorular
       </h2>
@@ -71,12 +53,11 @@ const helpfulGuides = [
 
 <!-- Related help guides, official citations & editorial boundary -->
 <section id="kaynaklar" tabindex="-1" class="guide-section py-14 sm:py-20 bg-white" aria-labelledby="guide-sources-heading">
-  <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10 space-y-10">
+  <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-6 space-y-10">
     <div class="space-y-4">
       <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
         <div>
-          <p class="guide-kicker">Daha fazlası</p>
-          <h2 id="guide-sources-heading" class="display text-section tracking-tightest text-ink mt-2">
+          <h2 id="guide-sources-heading" class="display text-section tracking-tightest text-ink">
             İlgili kullanım rehberleri ve resmî kaynaklar
           </h2>
         </div>
@@ -87,10 +68,10 @@ const helpfulGuides = [
       <ul role="list" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-8">
         {helpfulGuides.map((g) => (
           <li>
-            <a href={g.href} class="block h-full border-t border-line pt-5 hover:border-tealGraphic transition">
+            <a href={g.href} class="flex flex-col h-full border-t border-line pt-5 hover:border-tealGraphic transition">
               <p class="font-semibold text-ink">{g.title}</p>
               <p class="text-sm text-inkMuted mt-1.5 leading-relaxed">{g.text}</p>
-              <span class="mt-3 inline-flex items-center text-xs font-semibold text-teal">Rehberi aç →</span>
+              <span class="mt-auto pt-3 inline-flex items-center text-xs font-semibold text-teal">Rehberi aç →</span>
             </a>
           </li>
         ))}
@@ -130,27 +111,6 @@ const helpfulGuides = [
             Eksik ya da yanlış bir şey görürsen <a href="/destek/" class="font-semibold text-teal underline underline-offset-2 hover:text-tealDark">Destek ve iletişim</a> sayfasından bize yaz.
           </p>
         </div>
-
-        <dl class="pt-4 border-t border-line text-xs text-inkMuted space-y-1.5">
-          <div>
-            <dt class="inline font-semibold text-ink">Hazırlayan: </dt>
-            <dd class="inline">
-              <span class="font-semibold text-ink">TusAnkiM ekibi</span>
-            </dd>
-          </div>
-          {pubLabel && datePublished && (
-            <div>
-              <dt class="inline font-semibold text-ink">İlk yayım: </dt>
-              <dd class="inline"><time datetime={datePublished}>{pubLabel}</time></dd>
-            </div>
-          )}
-          {modLabel && dateModified && (
-            <div>
-              <dt class="inline font-semibold text-ink">Son güncelleme: </dt>
-              <dd class="inline"><time datetime={dateModified}>{modLabel}</time></dd>
-            </div>
-          )}
-        </dl>
       </aside>
     </div>
   </div>
@@ -158,7 +118,7 @@ const helpfulGuides = [
 
 <!-- Final CTA band -->
 <section class="guide-cta-band text-white" aria-labelledby="guide-cta-bottom-heading">
-  <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10 py-14 sm:py-16 grid lg:grid-cols-12 gap-8 items-center">
+  <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-6 py-14 sm:py-16 grid lg:grid-cols-12 gap-8 items-center">
     <div class="lg:col-span-8">
       <h2 id="guide-cta-bottom-heading" class="display text-section tracking-tightest">
         Planını kurduysan bugün ilk 20 kartla başla

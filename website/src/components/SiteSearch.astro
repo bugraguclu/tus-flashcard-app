@@ -107,6 +107,8 @@ const suggestions = ['calisma-rehberi', 'puan', 'referanslar', 'yardim'].map(pag
     help.hidden = !querying || (state !== 'error' && (state !== 'ready' || hits.length > 0));
     retry.hidden = !querying || state !== 'error';
     results.replaceChildren(...shown.map(resultItem));
+    const showingResults = querying && state === 'ready' && hits.length > 0;
+    status.classList.toggle('sr-only', showingResults);
     status.textContent = !querying ? 'Önerilen sayfalar'
       : state === 'error' ? 'Arama şu anda yüklenemiyor.'
       : state !== 'ready' ? 'Arama yükleniyor…'
@@ -227,7 +229,7 @@ const suggestions = ['calisma-rehberi', 'puan', 'referanslar', 'yardim'].map(pag
   #site-search-query:focus-visible { outline: none; }
   #site-search-query::-webkit-search-cancel-button { -webkit-appearance: none; }
   .search-scroll { overflow-y: auto; overscroll-behavior: contain; min-height: 0; margin-top: .75rem; }
-  #site-search-status { color: #596166; font-size: .8125rem; padding: 0 .625rem .375rem; }
+  #site-search-status:not(.sr-only) { color: #596166; font-size: .8125rem; padding: 0 .625rem .375rem; }
   .search-scroll :global(li + li) { border-top: 1px solid #e9ecee; }
   .search-scroll :global(li a) {
     display: grid; grid-template-columns: 1fr auto; align-items: center; gap: .125rem .5rem;

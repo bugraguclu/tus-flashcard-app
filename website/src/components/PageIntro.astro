@@ -1,17 +1,16 @@
 ---
-// Standard top of a content page: breadcrumb, section label, title and lead.
-interface Props { crumb: string; label: string; title: string; lead: string }
-const { crumb, label, title, lead } = Astro.props;
+// Standard top of a content page: breadcrumb, title and lead.
+interface Props { crumb: string; title: string; lead: string }
+const { crumb, title, lead } = Astro.props;
 ---
 <section class="page-intro bg-white border-b border-line py-10 sm:py-14">
-  <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
+  <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-6">
     <nav aria-label="Sayfa konumu" class="flex flex-wrap items-center gap-y-1 text-sm text-inkMuted mb-3">
       <a href="/" class="inline-flex items-center min-h-[2.75rem] py-2 hover:text-teal transition">Ana Sayfa</a>
       <span aria-hidden="true" class="mx-2">/</span>
       <span class="text-ink font-semibold">{crumb}</span>
     </nav>
-    <div class="section-num">{label}</div>
-    <h1 class="display text-page-title tracking-tightest text-ink mt-2 max-w-3xl">{title}</h1>
+    <h1 class="display text-page-title tracking-tightest text-ink max-w-3xl">{title}</h1>
     <p class="text-inkMuted mt-3 max-w-2xl leading-relaxed">{lead}</p>
     <slot />
   </div>

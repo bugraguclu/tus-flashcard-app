@@ -4,7 +4,7 @@ import { getBranches, type BranchInfo } from '../../data/branches';
 import catalog from '../../data/generated/catalog.json';
 import refSummary from '../../data/generated/references-summary.json';
 import { breadcrumbList } from '../../lib/schema';
-import { effectiveDate, formatTrDate } from '../../lib/lastmod';
+import { effectiveDate } from '../../lib/lastmod';
 
 export function getStaticPaths() {
   const all = getBranches();
@@ -27,7 +27,6 @@ const modDate = effectiveDate([
   'website/src/data/branches.ts',
   'website/src/data/generated/references-summary.json',
 ]);
-const modLabel = formatTrDate(modDate);
 
 const fmtPct = (v: number) => `%${v.toFixed(1).replace('.', ',')}`;
 const fmtNum = (n: number) => n.toLocaleString('tr-TR');
@@ -61,7 +60,7 @@ const siblings = all.filter((b) => b.slug !== branch.slug);
   schema={[crumbs, datasetSchema]}
 >
   <section class="bg-white border-b border-line py-10 sm:py-14">
-    <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
+    <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-6">
       <nav aria-label="Sayfa konumu" class="mb-3">
         <ol class="flex flex-wrap items-center gap-y-1 text-xs text-inkMuted">
           <li class="inline-flex items-center">
@@ -80,10 +79,7 @@ const siblings = all.filter((b) => b.slug !== branch.slug);
         </ol>
       </nav>
 
-      <p class="text-xs font-semibold text-teal">
-        {branch.group} · 11 TUS branşından biri
-      </p>
-      <h1 class="display text-page-title tracking-tightest text-ink mt-2 max-w-3xl">
+      <h1 class="display text-page-title tracking-tightest text-ink max-w-3xl">
         {branch.name} TUS çıkmış sorularını kartlar ne kadar karşılıyor?
       </h1>
       <p class="text-inkMuted mt-3 max-w-3xl leading-relaxed">
@@ -91,15 +87,6 @@ const siblings = all.filter((b) => b.slug !== branch.slug);
         <strong class="text-ink">{branch.summary.soru} {branch.name}</strong> sorusu çıktı. Her birini BKA TUS kartlarıyla
         (<code>{refSummary.katalogCommit}</code> sürümü) karşılaştırdık. Kaç soruda kartın çözüme götürdüğünü, kaç soruda yalnızca konunun geçtiğini aşağıda görürsün. Sınıflandırma yapay zekâ destekli bir ön değerlendirme; bağımsız hekim editör onayı henüz tamamlanmadı. ÖSYM’nin telif hakkı nedeniyle soru metni ve şık yayımlamıyoruz.
       </p>
-      <div class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-inkMuted">
-        <span>
-          Son güncelleme: <time datetime={modDate} class="font-semibold text-ink">{modLabel}</time>
-        </span>
-        <span>
-          Hazırlayan:{' '}
-          <span class="font-semibold text-ink">TusAnkiM</span>
-        </span>
-      </div>
 
       <div class="mt-7 grid grid-cols-2 lg:grid-cols-4 gap-x-10 gap-y-8">
         <div class="border-t border-line pt-5">
@@ -144,7 +131,7 @@ const siblings = all.filter((b) => b.slug !== branch.slug);
     </div>
   </section>
 
-  <section class="max-w-content mx-auto px-5 sm:px-6 lg:px-10 py-12 space-y-12">
+  <section class="max-w-content mx-auto px-5 sm:px-6 lg:px-6 py-12 space-y-12">
     <!-- 6-exam table -->
     <div>
       <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-5">
@@ -226,7 +213,7 @@ const siblings = all.filter((b) => b.slug !== branch.slug);
       </div>
 
       <div class="grid lg:grid-cols-12 gap-x-10 gap-y-8">
-        <div class="lg:col-span-5 border-t border-line pt-5 space-y-3">
+        <div class="lg:col-span-5 border-t border-line pt-5 flex flex-col gap-3">
           <h3 class="display text-base text-ink">Sınavdaki soru sayısı</h3>
           <p class="text-sm text-ink leading-relaxed">
             {branch.name}, {branch.examAllocation.sessionTotal} soruluk {branch.group} testinde{' '}
@@ -239,7 +226,7 @@ const siblings = all.filter((b) => b.slug !== branch.slug);
           <p class="text-xs text-inkMuted leading-relaxed">
             {branch.examAllocation.sessionShareNote}. Klinik puanı %40 Temel + %60 Klinik, Temel puanı %60 Temel + %40 Klinik ağırlıkla hesaplanır.
           </p>
-          <div class="pt-1">
+          <div class="mt-auto pt-1">
             <a
               href="/puan-hesapla/"
               class="inline-flex items-center min-h-[2.75rem] text-sm font-semibold text-teal underline underline-offset-4 hover:text-tealDark"
@@ -249,7 +236,7 @@ const siblings = all.filter((b) => b.slug !== branch.slug);
           </div>
         </div>
 
-        <div class="lg:col-span-7 border-t border-line pt-5 space-y-3">
+        <div class="lg:col-span-7 border-t border-line pt-5 flex flex-col gap-3">
           <h3 class="display text-base text-ink">Konusu var ama kartla çözülmeyen sorular</h3>
           <p class="text-sm text-ink leading-relaxed">
             {branch.name} sorularında çözüm desteği{' '}
@@ -267,7 +254,7 @@ const siblings = all.filter((b) => b.slug !== branch.slug);
               ? 'Yalnız konu sorularında mekanizma ya da anatomik/laboratuvar sınırı kartta geçer ama soruyu ayırt ettiren adım eksiktir. O adımı soru çözerek ve karşılaştırma kartlarıyla tamamlaman gerekir.'
               : 'Yalnız konu sorularında hastalığın temel bilgisi destede vardır ama vakadaki karar adımı (ilk tetkik, birinci basamak tedavi ya da kontrendikasyon) eksiktir. O adımı soru çözerek tamamlaman gerekir.'}
           </p>
-          <div class="flex flex-wrap items-center gap-x-5 gap-y-1 pt-1 text-xs">
+          <div class="mt-auto flex flex-wrap items-center gap-x-5 gap-y-1 pt-1 text-sm">
             <a href="/referanslar/" class="inline-flex items-center min-h-[2.75rem] font-semibold text-teal underline underline-offset-4 hover:text-tealDark">
               11 branşın 1.195 sorusunu gör →
             </a>
@@ -392,14 +379,10 @@ const siblings = all.filter((b) => b.slug !== branch.slug);
         </ul>
       </div>
 
-      <aside class="lg:col-span-4 border-t border-line pt-5 text-xs text-inkMuted leading-relaxed">
+      <aside class="lg:col-span-4 border-t border-line pt-5 lg:border-t-0 lg:pt-0 text-xs text-inkMuted leading-relaxed">
         <h2 class="display text-sm text-ink">Bu veriler ne için?</h2>
         <p class="mt-2">
           Veriler yalnızca TUS hazırlığı içindir; klinik kararın ya da resmî ÖSYM kılavuzunun yerini tutmaz. Sınıflandırma ön değerlendirmedir, hekim editör onayı henüz tamamlanmadı.
-        </p>
-        <p class="mt-2">
-          Son güncelleme: <time datetime={modDate} class="font-semibold text-ink">{modLabel}</time> ·{' '}
-          <span class="font-semibold text-ink">TusAnkiM</span>
         </p>
       </aside>
     </div>

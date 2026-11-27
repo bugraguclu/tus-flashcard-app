@@ -2,11 +2,10 @@
 import Layout from '../layouts/Layout.astro';
 import { SITE } from '../config';
 import { breadcrumbList } from '../lib/schema';
-import { effectiveDate, formatTrDate, pageSources } from '../lib/lastmod';
+import { effectiveDate, pageSources } from '../lib/lastmod';
 
 const origin = new URL(Astro.site!).origin;
 const modDate = effectiveDate(pageSources('ankimobile-alternatifi'));
-const modLabel = formatTrDate(modDate);
 
 const crumbs = breadcrumbList(origin, [
   { name: 'Ana Sayfa', path: '/' },
@@ -78,7 +77,7 @@ const COMPARISON_ROWS = [
   schema={[crumbs, articleSchema]}
 >
   <section class="bg-white border-b border-line py-10 sm:py-14">
-    <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
+    <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-6">
       <nav aria-label="Sayfa konumu" class="mb-3">
         <ol class="flex flex-wrap items-center gap-y-1 text-xs text-inkMuted">
           <li class="inline-flex items-center">
@@ -101,20 +100,10 @@ const COMPARISON_ROWS = [
         <strong>AnkiMobile Flashcards</strong> Türkiye App Store’da tek seferlik <strong>₺1.299,99</strong> (21 Kasım 2026’da baktık).
         Aşağıda ikisini yan yana koyduk; AnkiMobile’ın daha iyi seçim olduğu durumları da yazdık.
       </p>
-
-      <div class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-inkMuted">
-        <span>
-          Son güncelleme: <time datetime={modDate} class="font-semibold text-ink">{modLabel}</time>
-        </span>
-        <span>
-          Hazırlayan:{' '}
-          <span class="font-semibold text-ink">TusAnkiM</span>
-        </span>
-      </div>
     </div>
   </section>
 
-  <section class="max-w-content mx-auto px-5 sm:px-6 lg:px-10 py-12 space-y-12">
+  <section class="max-w-content mx-auto px-5 sm:px-6 lg:px-6 py-12 space-y-12">
     <!-- Independence & Transparency Callout -->
     <div class="border-t border-line pt-5">
       <p class="text-sm sm:text-base text-ink leading-relaxed font-semibold">
@@ -264,20 +253,6 @@ const COMPARISON_ROWS = [
           ACM KDD ’22: FSRS aralıklı tekrar optimizasyonu ↗
         </a>
       </div>
-      <nav aria-label="İlgili sayfalar" class="pt-3 border-t border-lineLight flex flex-wrap gap-x-5 gap-y-0">
-        <a href="/yardim/anki-ile-kullanma/" class="text-link">
-          Anki ile birlikte kullanma kılavuzu →
-        </a>
-        <a href="/rehber/tus-icin-anki-uyumlu-sistem/" class="text-link">
-          TUS için Anki uyumlu sistem rehberi →
-        </a>
-        <a href="/yardim/kronometre/" class="text-link">
-          TUS kronometresi ve çalışma takvimi →
-        </a>
-        <a href="/referanslar/" class="text-link">
-          Son 6 TUS referans kanıtları →
-        </a>
-      </nav>
     </div>
   </section>
 </Layout>

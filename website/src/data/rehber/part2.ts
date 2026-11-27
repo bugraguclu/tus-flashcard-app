@@ -57,11 +57,6 @@ export const REHBER_PART_2: RehberArticle[] = [
         publisher: 'Resmî Gazete',
       },
       {
-        label: 'Uzmanlık Eğitimi Yönetmeliğinde Değişiklik: %2 → %5 kesinti (Resmî Gazete, 16 Mayıs 2024, Sayı 32548)',
-        url: 'https://www.resmigazete.gov.tr/eskiler/2024/05/20240516-1.htm',
-        publisher: 'Resmî Gazete',
-      },
-      {
         label: 'TusAnkiM — TUS çıkmış soru analizi (son 6 sınav, 1.195 soru)',
         url: '/tus-cikmis-sorular-ve-analiz/',
         publisher: 'TusAnkiM',

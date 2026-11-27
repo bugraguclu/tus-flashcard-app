@@ -23,7 +23,7 @@ export const HELP_INTROS: Record<string, HelpIntro> = {
   'hizli-baslangic': {
     intro: 'İlk tekrarın için bir deste ve birkaç kart yeterli. Hazır TUS paketiyle başlayabilir, kendi kartını yazabilir veya Anki desteni getirebilirsin.',
     steps: ['Desteler ekranında TUS Kartları → Kartları ücretsiz aç yolunu kullan. Kendi kartın için ＋ → Kart ekle seç.', 'Bir deste adına dokun; soruyu oku ve Cevabı göster düğmesine dokun.', 'Cevabını değerlendir. Yanlış hatırladıysan Tekrar seç; yanlış düğmeye bastıysan son cevabı geri al.'],
-    note: 'Güncel beta ücretsizdir; ödeme veya kart bilgisi gerekmez. Hazır paket iPhone uygulamasında internet olmadan açılabilir.',
+    note: 'Hazır paket iPhone uygulamasında internet olmadan açılabilir.',
     related: ['calisma-ekrani', 'tus-kartlari', 'yedekler'],
     groups: [{ title: 'Kurulum ve kart edinme', from: '1. İlk ekran: Desteler' }, { title: 'İlk tekrar ve günlük düzen', from: '3. Çalışın' }, { title: 'Verilerini koruma', from: '5. Verilerinizi koruyun' }],
   },

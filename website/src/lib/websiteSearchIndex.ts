@@ -30,7 +30,7 @@ const EXTRA_PAGE_TERMS: Record<string, string> = {
   hakkimizda: 'hakkımızda tusankim kart koleksiyonu referans değerlendirme',
   yardim: 'kılavuz rehber kurulum kullanım anki apkg colpkg fsrs kronometre yedek',
   sss: 'sıkça sorulan sorular ücretsiz beta fiyat erişim android bulut',
-  destek: 'destek iletişim e-posta github kart düzeltme teknik bildirim',
+  destek: 'destek iletişim e-posta kart düzeltme teknik bildirim',
   gizlilik: 'gizlilik kvkk yerel offline çerez veri koruma',
   kosullar: 'kullanım koşulları lisans telif ücretsiz beta fiyat bağımsız',
 };

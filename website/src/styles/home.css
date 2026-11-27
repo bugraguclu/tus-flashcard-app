@@ -1,13 +1,5 @@
 /* Home page sections. Tokens mirror tailwind.config.mjs (AA-verified). */
 
-/* ── Section kicker: one plain line above a heading ────────────────────── */
-.kicker {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #0e7469;
-}
-.kicker-warm { color: #a3430a; }
-
 /* The app screens retain their own UI and colors inside a shared product stage. */
 .home-product-hero { background: #fff; }
 .home-cta { min-block-size: 3.25rem; padding-inline: 1.75rem; font-size: 0.9375rem; }
@@ -19,10 +11,6 @@
 }
 @media (min-width: 900px) {
   .hero-layout { grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr); }
-}
-@media (max-width: 899px) {
-  .hero-copy-group { display: contents; }
-  .hero-perks { order: 1; margin-block-start: 0; }
 }
 .hero-title {
   font-size: clamp(2.125rem, 5.2vw, 3.875rem);
@@ -49,12 +37,6 @@
   display: block;
   inline-size: 100%;
   block-size: auto;
-}
-.hero-product figcaption {
-  margin-block-start: 0.75rem;
-  color: #596166;
-  font-size: 0.8125rem;
-  text-align: center;
 }
 
 /* ── KPI tiles with meters (hairline grid) ───────────────────────────────── */
@@ -162,6 +144,8 @@
 }
 a.branch-row:focus-visible { outline: 2px solid #0e7469; outline-offset: 2px; }
 .branch-columns { display: grid; column-gap: 2.5rem; }
+.branch-columns > li { display: flex; }
+.branch-columns .branch-row { inline-size: 100%; block-size: 100%; }
 @media (min-width: 1024px) {
   .branch-columns { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .branch-columns .branch-row { grid-template-columns: 11rem minmax(0, 1fr) 3.5rem; }

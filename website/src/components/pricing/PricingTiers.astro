@@ -3,7 +3,7 @@ import { SITE, PRICING_MODE } from '../../config';
 import offer from '../../data/offer.json';
 ---
 <section id="secenekler" class="py-10 sm:py-14 bg-white" aria-label="Erişim seçenekleri">
-  <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
+  <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-6">
     <ul role="list" class="tiers grid lg:grid-cols-3 gap-6 items-stretch" data-tiers>
       {offer.tiers.map((tier, index) => (
         <li class="tier rounded-2xl p-6 sm:p-8 flex flex-col" style={`--n:${index}`} data-tier={tier.id} data-selected={tier.highlight ? '' : undefined}>

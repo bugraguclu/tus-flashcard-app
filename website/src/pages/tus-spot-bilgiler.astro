@@ -1,14 +1,12 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { SITE } from '../config';
 import catalog from '../data/generated/catalog.json';
 import demoCards from '../data/generated/demo-cards.json';
 import { breadcrumbList, collectionPage } from '../lib/schema';
-import { effectiveDate, formatTrDate, pageSources } from '../lib/lastmod';
+import { effectiveDate, pageSources } from '../lib/lastmod';
 
 const origin = new URL(Astro.site!).origin;
 const modDate = effectiveDate(pageSources('spot-bilgiler'));
-const modLabel = formatTrDate(modDate);
 
 const crumbs = breadcrumbList(origin, [
   { name: 'Ana Sayfa', path: '/' },
@@ -39,7 +37,7 @@ const klinikCount = demoCards.filter((c) => c.test === 'Klinik').length;
   schema={[crumbs, colSchema]}
 >
   <section class="bg-white border-b border-line py-10 sm:py-14">
-    <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
+    <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-6">
       <nav aria-label="Sayfa konumu" class="mb-3">
         <ol class="flex flex-wrap items-center gap-y-1 text-xs text-inkMuted">
           <li class="inline-flex items-center">
@@ -63,22 +61,12 @@ const klinikCount = demoCards.filter((c) => c.test === 'Klinik').length;
         <strong>{catalog.totals.courses} ders</strong> ve <strong>{catalog.totals.topicSubdecks} konu alt destesi</strong> içeren arşivin
         2026/2 sınavı öncesindeki sürümünden (<code>a78ae1f</code>) seçildi.
       </p>
-
-      <div class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-inkMuted">
-        <span>
-          Son güncelleme: <time datetime={modDate} class="font-semibold text-ink">{modLabel}</time>
-        </span>
-        <span>
-          Hazırlayan:{' '}
-          <span class="font-semibold text-ink">TusAnkiM</span>
-        </span>
-      </div>
     </div>
   </section>
 
   <!-- 1 · Why Passive Spot PDFs Fail vs Active Recall -->
   <section class="bg-white border-b border-line py-10 sm:py-12" aria-labelledby="why-active-heading">
-    <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
+    <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-6">
       <div class="max-w-2xl">
         <h2 id="why-active-heading" class="display text-section tracking-tightest text-ink">
           Spot listesi okumak neden yetmez?
@@ -90,21 +78,18 @@ const klinikCount = demoCards.filter((c) => c.test === 'Klinik').length;
 
       <div class="mt-6 grid md:grid-cols-3 gap-x-10 gap-y-8">
         <div class="border-t border-line pt-5 space-y-2">
-          <div class="text-xs font-bold text-teal">01 · İpucu olmadan hatırlama</div>
           <h3 class="display text-base text-ink">Cevabı gizle, önce kendin hatırla</h3>
           <p class="text-xs sm:text-sm text-inkMuted leading-relaxed">
             Boşluk doldurma kartı kritik ayrımı gizler; örneğin ilk tetkiki, özgül antikoru ya da anatomik seviyeyi. Önce sen yanıtlarsın, sonra kontrol edersin.
           </p>
         </div>
         <div class="border-t border-line pt-5 space-y-2">
-          <div class="text-xs font-bold text-teal">02 · FSRS-6 ile %20–30 daha az tekrar</div>
           <h3 class="display text-base text-ink">Unutmak üzereyken karşına çıkar</h3>
           <p class="text-xs sm:text-sm text-inkMuted leading-relaxed">
             İyi bildiğin spotları haftalarca erteler, karıştırdıklarını daha sık sorar. Günde 60 yeni kartla 9.575 kart 160 günde biter.
           </p>
         </div>
         <div class="border-t border-line pt-5 space-y-2">
-          <div class="text-xs font-bold text-teal">03 · Her seçenekte demo soruları</div>
           <h3 class="display text-base text-ink">Kurmadan önce ya da uygulamada dene</h3>
           <p class="text-xs sm:text-sm text-inkMuted leading-relaxed">
             Seçili demo soruları üç seçenekte de açık: ücretsiz kullanım (ara ara reklam), tüm kartlar (<strong>₺2.000</strong>) ve
@@ -116,7 +101,7 @@ const klinikCount = demoCards.filter((c) => c.test === 'Klinik').length;
   </section>
 
   <!-- 2 · Interactive Verified Spot Cards Preview (Zero Copyrighted ÖSYM Text) -->
-  <section class="max-w-content mx-auto px-5 sm:px-6 lg:px-10 py-12 space-y-14" aria-labelledby="spots-preview-heading">
+  <section class="max-w-content mx-auto px-5 sm:px-6 lg:px-6 py-12 space-y-14" aria-labelledby="spots-preview-heading">
     <div class="space-y-5" data-spot-hub>
       <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
         <div class="max-w-2xl">
@@ -280,45 +265,6 @@ const klinikCount = demoCards.filter((c) => c.test === 'Klinik').length;
             ))}
           </tbody>
         </table>
-      </div>
-    </div>
-
-    <!-- 4 · Direct Demo Access Across All 3 Segments + Cross-Links -->
-    <div class="border-t border-line pt-5 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-      <div class="max-w-2xl space-y-2">
-        <h2 class="display text-lg text-ink">Demo soruları hangi seçenekte açık?</h2>
-        <p class="text-sm text-inkMuted leading-relaxed">
-          Üçünde de. Seçenekler şöyle: ücretsiz kullanım (ara ara reklam), <strong>₺2.000</strong> ile 9.575 kartın tamamı
-          veya <strong>₺50</strong> ile reklamları kaldırma. Güncel beta sürümünde ücretli seçenekler ve reklamlar henüz devrede değil; TUS paketi ücretsiz açılır.
-          Kendi <code>.apkg</code>/<code>.colpkg</code> destelerinle de internetsiz çalışırsın.
-        </p>
-        <p class="text-xs text-inkMuted">{SITE.disclaimer}</p>
-      </div>
-      <div class="flex flex-wrap gap-2.5 shrink-0">
-        <a
-          href="/#demo"
-          class="inline-flex items-center min-h-[2.75rem] px-5 rounded-lg bg-teal text-white text-xs sm:text-sm font-semibold hover:bg-tealDark transition"
-        >
-          FSRS-6 ile kart dene →
-        </a>
-        <a
-          href="/referanslar/"
-          class="text-link"
-        >
-          1.195 referans kanıtı →
-        </a>
-        <a
-          href="/yardim/kronometre/"
-          class="text-link"
-        >
-          TUS kronometresi ve takvim →
-        </a>
-        <a
-          href="/tus-cikmis-sorular-ve-analiz/"
-          class="text-link"
-        >
-          Çıkmış soru dağılımı →
-        </a>
       </div>
     </div>
   </section>

@@ -5,14 +5,12 @@ import { SITE } from '../../config';
 import { num } from '../../lib/format';
 
 const cards = num(catalog.totals.cards);
-const trust = ['Beta ücretsiz, kart bilgisi istemiyoruz', 'Hesap açmadan başlarsın', 'İnternet yokken de çalışır'];
 ---
 <section class="home-product-hero border-b border-line" aria-labelledby="hero-title">
-  <div class="hero-layout max-w-content mx-auto px-5 sm:px-6 lg:px-10">
+  <div class="hero-layout max-w-content mx-auto px-5 sm:px-6 lg:px-6">
     <div class="hero-copy-group min-w-0">
       <div>
-        <p class="kicker">TUS için aralıklı tekrar</p>
-        <h1 id="hero-title" class="hero-title display tracking-tightest text-ink mt-4">
+        <h1 id="hero-title" class="hero-title display tracking-tightest text-ink">
           {cards} TUS kartı. <em>Unutmadan önce tekrar</em>
         </h1>
         <p data-speakable class="mt-5 text-base sm:text-lg text-inkMuted leading-relaxed max-w-xl">
@@ -37,10 +35,6 @@ const trust = ['Beta ücretsiz, kart bilgisi istemiyoruz', 'Hesap açmadan başl
           </a>
         </div>
       </div>
-
-      <ul role="list" class="hero-perks mt-6 grid gap-1 text-sm text-inkMuted">
-        {trust.map((item) => <li>{item}</li>)}
-      </ul>
     </div>
 
     <figure class="hero-product">
@@ -54,7 +48,6 @@ const trust = ['Beta ücretsiz, kart bilgisi istemiyoruz', 'Hesap açmadan başl
           decoding="async"
         />
       </div>
-      <figcaption>Ekranlar web uygulamasından; içindekiler örnek kartlar.</figcaption>
     </figure>
   </div>
 </section>

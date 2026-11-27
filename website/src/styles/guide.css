@@ -1,13 +1,6 @@
 /* TUS Çalışma Rehberi pillar page styles.
  * All color tokens mirror tailwind.config.mjs (WCAG 2.2 AA verified). */
 
-.guide-kicker {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #0e7469;
-}
-.guide-kicker-warm { color: #a3430a; }
-
 /* Keep anchor jumps (#mega-deste-kiyasi, TOC sections) and keyboard focus clear of header + sticky TOC (WCAG 2.4.11) */
 html:has(.guide-toc-bar) {
   scroll-padding-top: calc(var(--site-header-height, 4.75rem) + 4rem);

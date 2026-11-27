@@ -17,7 +17,7 @@ const pageSchema = {
   ...dateModified(pageSources('destek')),
 };
 ---
-<Layout title="Destek ve İletişim | TusAnkiM" description="TusAnkiM’de kurulumda takıldıysan, bir kartta hata gördüysen veya teknik bir sorun yaşıyorsan bize yaz. E-posta ve GitHub adreslerimiz burada." schema={[crumbs, pageSchema]}>
+<Layout title="Destek ve İletişim | TusAnkiM" description="TusAnkiM’de kurulumda takıldıysan, bir kartta hata gördüysen veya teknik bir sorun yaşıyorsan bize e-postayla yaz. Yardım bağlantıları da burada." schema={[crumbs, pageSchema]}>
   <section class="site-container support-page">
     <a href="/yardim/" class="text-link">Kullanım kılavuzu</a>
     <h1>Nasıl yardımcı olabiliriz?</h1>
@@ -30,8 +30,8 @@ const pageSchema = {
       </div>
       <div>
         <h2>Hata veya kart düzeltmesi bildir</h2>
-        <p>Kartın dersini, kimliğini ve düzeltilmesini istediğin bilgiyi yaz. Daha önce bildirilenlere de bakabilirsin.</p>
-        <a class="text-link" href={SITE.githubIssuesUrl} target="_blank" rel="noopener noreferrer">GitHub’da bildirim oluştur</a>
+        <p>Kartın dersini, kimliğini ve düzeltilmesini istediğin bilgiyi yaz; kontrol edip güncelleyelim.</p>
+        <a class="text-link" href={`mailto:${SITE.email}?subject=${encodeURIComponent('TusAnkiM kart düzeltmesi')}`}>Kart düzeltmesi bildir</a>
       </div>
     </div>
     <div class="support-help">
@@ -56,8 +56,10 @@ const pageSchema = {
   h1 { font-size: clamp(2rem, 1.4rem + 2vw, 2.875rem); line-height: 1.2; letter-spacing: -.035em; font-weight: 600; margin-top: 1.5rem; }
   .support-lead { color: #596166; margin-top: 1rem; line-height: 1.8; max-width: 48ch; }
   .support-options { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; margin-top: 3rem; padding-block: 2rem; border-top: 1px solid #dde1e4; }
+  .support-options > div { display: flex; flex-direction: column; align-items: flex-start; }
   h2 { font-size: 1.125rem; font-weight: 600; letter-spacing: -.02em; }
   .support-options p { color: #596166; line-height: 1.8; margin-block: .75rem; max-width: 48ch; }
+  .support-options .text-link { margin-top: auto; }
   .support-help { margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #dde1e4; }
   .support-help > p { color: #596166; line-height: 1.8; margin-block: 1rem; max-width: 65ch; }
   .support-help nav { display: flex; flex-wrap: wrap; gap: .25rem 2rem; margin-top: 1rem; }

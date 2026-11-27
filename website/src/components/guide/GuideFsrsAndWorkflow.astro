@@ -2,10 +2,9 @@
 import { WORKFLOW_STEPS } from '../../data/studyGuide';
 ---
 <section id="fsrs-ve-hacim" tabindex="-1" class="guide-section py-14 sm:py-20 bg-surfaceSoft border-b border-line" aria-labelledby="fsrs-workflow-heading">
-  <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10 space-y-12">
+  <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-6 space-y-12">
     <div class="max-w-3xl">
-      <p class="guide-kicker">Aralıklı tekrar ve günlük rutin</p>
-      <h2 id="fsrs-workflow-heading" class="display text-section tracking-tightest text-ink mt-3">
+      <h2 id="fsrs-workflow-heading" class="display text-section tracking-tightest text-ink">
         FSRS-6 ile aralıklı tekrar, günlük çalışma süresi ve deneme analizi
       </h2>
       <p class="text-inkMuted mt-3 leading-relaxed">
@@ -31,10 +30,6 @@ import { WORKFLOW_STEPS } from '../../data/studyGuide';
           <strong>hatırlanabilirlik</strong>. Yaklaşık 1.000 tekrar biriktirdiğinde TusAnkiM’de <strong>Parametreleri optimize et</strong>
           seçeneğiyle tekrar takvimini kendi hafızana göre ayarlayabilirsin.
         </p>
-        <div class="flex flex-wrap gap-x-6 gap-y-1">
-          <a href="/yardim/fsrs/" class="text-link">FSRS-6 ayar rehberi →</a>
-          <a href="/yardim/anki-ile-kullanma/" class="text-link">Anki ile birlikte kullanma →</a>
-        </div>
       </div>
 
       <div class="lg:col-span-5 border-t border-line pt-5 space-y-3">
@@ -75,16 +70,11 @@ import { WORKFLOW_STEPS } from '../../data/studyGuide';
 
       <ol role="list" class="grid sm:grid-cols-2 lg:grid-cols-4 gap-x-10 gap-y-8">
         {WORKFLOW_STEPS.map((item) => (
-          <li class="border-t border-line pt-5 flex flex-col justify-between">
-            <div>
-              <p class="text-sm font-semibold text-teal">Adım {item.step}</p>
-              <h4 class="display text-base text-ink mt-1.5 leading-snug">{item.name}</h4>
-              <p class="text-xs font-semibold text-ink mt-2">{item.summary}</p>
-              <p class="text-xs text-inkMuted mt-2 leading-relaxed">{item.detail}</p>
-            </div>
-            <a href={item.href} class="mt-4 inline-flex items-center min-h-[2.75rem] text-xs font-semibold text-teal hover:text-tealDark underline underline-offset-4">
-              {item.linkLabel} →
-            </a>
+          <li class="border-t border-line pt-5">
+            <p class="text-sm font-semibold text-teal">Adım {item.step}</p>
+            <h4 class="display text-base text-ink mt-1.5 leading-snug">{item.name}</h4>
+            <p class="text-xs font-semibold text-ink mt-2">{item.summary}</p>
+            <p class="text-xs text-inkMuted mt-2 leading-relaxed">{item.detail}</p>
           </li>
         ))}
       </ol>

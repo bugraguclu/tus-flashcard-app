@@ -12,7 +12,6 @@ const pageSchema = {
 ---
 <Layout title="Hakkımızda | TusAnkiM" description="TusAnkiM’i neden kurduk, 9.575 TUS kartını nasıl hazırlıyoruz ve kartları çıkmış sorularla nasıl karşılaştırıyoruz? Kısaca anlatıyoruz." schema={[crumbs, pageSchema]}>
   <article class="about-page">
-    <p class="eyebrow">{founder.kicker}</p>
     <h1>{founder.letterTitle}</h1>
     <p class="about-intro">{founder.quote}</p>
     <div class="about-letter">{founder.letterParagraphs.map((paragraph) => <p>{paragraph}</p>)}</div>
@@ -20,10 +19,6 @@ const pageSchema = {
       <h2 id="approach-heading">Kartlar ve referanslar</h2>
       <div class="principles-list">{founder.editorialPillars.map((pillar) => <div><h3>{pillar.title}</h3><p>{pillar.body}</p></div>)}</div>
     </section>
-    <nav class="about-links" aria-label="TusAnkiM hakkında daha fazla bilgi">
-      <a class="text-link" href="/referanslar/">Referansları incele</a>
-      <a class="text-link" href="/destek/">Bize ulaş</a>
-    </nav>
   </article>
 </Layout>
 <style>
@@ -37,6 +32,5 @@ const pageSchema = {
   .principles-list { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2rem; }
   h3 { font-weight: 600; font-size: 1rem; }
   .principles-list p { color: #596166; line-height: 1.85; font-size: 1rem; margin-top: .5rem; }
-  .about-links { border-top: 1px solid #dde1e4; margin-top: 3rem; padding-top: 1.5rem; display: flex; flex-wrap: wrap; gap: .5rem 2rem; }
   @media (max-width: 540px) { .about-page { padding-block: 2.5rem; } .principles-list { grid-template-columns: 1fr; gap: 1.5rem; } }
 </style>
