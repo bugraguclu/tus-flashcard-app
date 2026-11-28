@@ -12,11 +12,13 @@ import DemoIcons from './DemoIcons.astro';
     >
       <DemoIcons name="back" size={22} />
     </button>
+    <button type="button" data-demo-menu disabled class="demo-menu-button" aria-label="Uygulama menüsünü aç" aria-haspopup="dialog"><DemoIcons name="menu" /></button>
 
     <button
       type="button"
       data-demo-scope
-      aria-label="Deste seçimine dön"
+      aria-label="Deste seç"
+      aria-haspopup="dialog"
       class="demo-scope-btn flex-1 min-w-0 min-h-[44px] flex flex-col items-start justify-center gap-0.5 px-1.5 rounded-lg hover:bg-black/[0.04] transition-colors cursor-pointer text-left"
     >
       <span data-demo-deck-title class="text-[12px] font-semibold text-inkMuted truncate max-w-full">
@@ -42,7 +44,7 @@ import DemoIcons from './DemoIcons.astro';
   </div>
 
   <!-- Scrollable Card Stage (max-width: 760px) -->
-  <div class="flex-1 overflow-y-auto px-4 sm:px-6 pt-3 sm:pt-4 pb-5">
+  <div class="flex-1 overflow-y-auto overscroll-contain px-4 sm:px-6 pt-3 sm:pt-4 pb-5">
     <div data-demo-active-stage class="w-full max-w-[760px] mx-auto">
       <!-- CardContextCrumb + streakChip -->
       <div class="min-h-[28px] mb-2 px-1 flex items-center justify-between gap-2">
@@ -86,7 +88,7 @@ import DemoIcons from './DemoIcons.astro';
               href="/referanslar/"
               class="inline-flex items-center min-h-[44px] py-1 shrink-0 font-semibold text-teal underline underline-offset-2 hover:text-tealDark"
             >
-              Referans kaydını gör →
+              Referans kaydını gör
             </a>
           </div>
         </div>

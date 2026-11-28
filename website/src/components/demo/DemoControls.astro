@@ -1,0 +1,23 @@
+---
+import DemoIcons from './DemoIcons.astro';
+import '../../styles/dialog-motion.css';
+import '../../styles/demo-controls.css';
+import { MotionCurve, MotionDuration, POPOVER_START_SCALE, exitDuration } from '../../../../lib/motion';
+const motionStyle = `--motion-ease-out:cubic-bezier(${MotionCurve.easeOut.join(',')});--motion-popover:${MotionDuration.popover}ms;--motion-popover-exit:${exitDuration(MotionDuration.popover)}ms;--motion-popover-scale:${POPOVER_START_SCALE};--motion-panel:${MotionDuration.panel}ms;--motion-panel-exit:${exitDuration(MotionDuration.panel)}ms;`;
+const { prefix = 'demo' } = Astro.props;
+---
+<dialog style={motionStyle} data-demo-dialog data-dialog-motion aria-labelledby={`${prefix}-dialog-title`} class="demo-dialog">
+  <div class="demo-dialog-header">
+    <span data-demo-dialog-leading hidden></span>
+    <h2 id={`${prefix}-dialog-title`} data-demo-dialog-title></h2>
+    <span data-demo-dialog-field hidden></span>
+    <span data-demo-dialog-tools class="demo-dialog-tools"></span>
+    <button type="button" data-demo-dialog-close aria-label="Pencereyi kapat"><DemoIcons name="close" size={22} /></button>
+  </div>
+  <div data-demo-dialog-body class="demo-dialog-body"></div>
+  <div data-demo-dialog-footer class="demo-dialog-footer" hidden></div>
+  <p class="demo-dialog-note">Canlı deneme · Yanıtların bu sayfada kalır; sayfa yenilenince sıfırlanır.</p>
+</dialog>
+{(['chevron-down', 'cards', 'check', 'search', 'add', 'back', 'folder', 'deck'] as const).map((name) => (
+  <template data-demo-icon={name}><DemoIcons name={name} /></template>
+))}

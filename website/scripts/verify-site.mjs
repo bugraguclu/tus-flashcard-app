@@ -230,7 +230,7 @@ const indexHtml = fs.readFileSync(path.join(DIST, 'index.html'), 'utf8');
 // Home keeps the working demo and separates pre-exam/current reference evidence.
 check(indexHtml.includes('1.195') && indexHtml.includes('1.108'), 'index.html: missing reference totals');
 check(indexHtml.includes('76/200') && indexHtml.includes('82/200') && indexHtml.includes('a78ae1f'), 'index.html: missing pre-exam/current reference distinction');
-check(indexHtml.includes('data-demo-simulator') && !indexHtml.includes('data-demo-payload'), 'index.html: missing the tablet demo, or its card JSON was embedded in the page');
+check(indexHtml.includes('data-live-demo') && indexHtml.includes('data-demo-scope') && !indexHtml.includes('data-demo-payload'), 'index.html: missing the interactive deck/card demo, or its card JSON was embedded in the page');
 check(indexHtml.includes('href="/kart-denemesi/"') && indexHtml.includes('href="/calisma-plani/"') && indexHtml.includes('href="/tus-calisma-rehberi/"'), 'index.html: missing links to the tablet demo, study planner, and TUS study guide');
 check(!indexHtml.includes('data-cd-announce'), 'index.html: removed countdown returned');
 

@@ -1,0 +1,113 @@
+/* Deck rows, written once here rather than as utility classes on each of the 14 rows. */
+  .demo-deck-row { display: flex; align-items: center; min-height: 44px; padding: 4px 8px 4px 0; background: #fff; border-bottom: 1px solid #dde1e4; }
+  .demo-deck-toggle, .demo-deck-leaf-spacer { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 44px; height: 44px; }
+  .demo-deck-toggle { min-width: 44px; border-radius: 0.5rem; color: #24292c; cursor: pointer; transition: background-color 150ms; }
+  .demo-deck-toggle:hover, .demo-deck-study-btn:hover { background: rgb(0 0 0 / 0.045); }
+  .demo-deck-leaf-spacer { width: 24px; }
+  .demo-deck-leaf-spacer > span { width: 4px; height: 4px; border-radius: 9999px; background: #dde1e4; }
+  .demo-deck-study-btn { flex: 1; min-width: 0; min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 8px; text-align: left; border-radius: 0.5rem; padding: 6px; cursor: pointer; transition: background-color 150ms; }
+  .demo-deck-title { flex: 1; min-width: 0; font-size: 14px; font-weight: 500; color: #24292c; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .demo-deck-counts { display: flex; align-items: center; flex-shrink: 0; font-size: 14px; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .demo-deck-heads { font-size: 11px; white-space: nowrap; }
+  .demo-col-new, .demo-col-review { width: 44px; text-align: center; }
+  .demo-col-learn { width: 52px; text-align: center; }
+  @media (min-width: 640px) {
+    .demo-deck-row { padding-right: 16px; }
+    .demo-deck-leaf-spacer { width: 44px; }
+    .demo-col-new, .demo-col-learn, .demo-col-review { width: 54px; }
+  }
+  .demo-viewport {
+    container: demo-screen / inline-size;
+  }
+  .demo-deck-row {
+    padding-inline-start: calc(6px + var(--depth, 0) * 10px);
+  }
+  @container demo-screen (inline-size < 360px) {
+    .demo-viewport .demo-deck-header {
+      padding-inline-start: 14px;
+      padding-inline-end: 10px;
+    }
+    .demo-viewport .demo-deck-row {
+      padding-inline-start: calc(4px + var(--depth, 0) * 8px);
+      padding-inline-end: 6px;
+    }
+    .demo-viewport .demo-deck-study-btn {
+      padding-inline: 4px;
+      gap: 4px;
+    }
+    .demo-viewport .demo-col-new {
+      width: 34px;
+    }
+    .demo-viewport .demo-col-learn {
+      width: 52px;
+    }
+    .demo-viewport .demo-col-review {
+      width: 36px;
+    }
+  }
+  @container demo-screen (inline-size < 300px) {
+    .demo-viewport .demo-deck-header {
+      padding-inline-start: 10px;
+      padding-inline-end: 6px;
+    }
+    .demo-viewport .demo-deck-row {
+      padding-inline-start: calc(2px + var(--depth, 0) * 6px);
+      padding-inline-end: 4px;
+    }
+    .demo-viewport .demo-deck-leaf-spacer {
+      width: 16px;
+    }
+    .demo-viewport .demo-deck-study-btn {
+      padding-inline: 2px;
+      gap: 4px;
+    }
+    .demo-viewport .demo-deck-title {
+      font-size: 13px;
+      line-height: 1.25;
+      white-space: normal;
+      overflow: visible;
+      text-overflow: clip;
+      overflow-wrap: break-word;
+    }
+    .demo-viewport .demo-col-new {
+      width: 30px;
+    }
+    .demo-viewport .demo-col-learn {
+      width: 48px;
+    }
+    .demo-viewport .demo-col-review {
+      width: 34px;
+    }
+    .demo-deck-header .demo-col-new,
+    .demo-deck-header .demo-col-learn,
+    .demo-deck-header .demo-col-review {
+      font-size: 10px;
+    }
+    .demo-deck-study-btn .demo-col-new,
+    .demo-deck-study-btn .demo-col-learn,
+    .demo-deck-study-btn .demo-col-review {
+      font-size: 13px;
+    }
+  }
+  @container demo-screen (inline-size >= 600px) {
+    .demo-viewport .demo-deck-row {
+      padding-inline-start: calc(8px + var(--depth, 0) * 24px);
+    }
+    .demo-scope-btn {
+      flex-direction: row;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 10px;
+    }
+  }
+  .demo-chevron {
+    transform: rotate(0deg);
+  }
+  [aria-expanded="false"] .demo-chevron {
+    transform: rotate(-90deg);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .demo-chevron {
+      transition: transform 190ms cubic-bezier(0.77, 0, 0.175, 1);
+    }
+  }

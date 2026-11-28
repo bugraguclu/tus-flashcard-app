@@ -65,7 +65,7 @@ export function verifySearchOutput({ dist, htmlFiles, check }) {
   // its cards load from /data/demo-decks.json, never inside the page.
   check(bytes < 80000, `home: ${bytes} bytes exceeds the 80 KB HTML budget`);
   check(!/\bdata-cards=|\bdata-fsrs=/.test(home), 'home: bulk demo/simulation JSON was embedded again');
-  check(home.includes('data-decks-url="/data/demo-decks.json"') && home.includes('data-demo-simulator'), 'home: missing the tablet demo and its external deck data URL');
+  check(home.includes('data-cards-url="/data/demo-cards.json"') && home.includes('data-live-demo'), 'home: missing the interactive tablet demo and its external card data URL');
   check(home.includes('data-demo-retry'), 'home: external demo failure needs a retry action');
   check(home.includes('href="/sss/"'), 'home: missing link to full FAQ');
   // The home page stays a short overview; the detail lives on its own pages.

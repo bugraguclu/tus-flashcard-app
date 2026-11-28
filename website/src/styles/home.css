@@ -166,12 +166,12 @@ main:has(> .cta-band:last-child) + footer {
 }
 
 /* ── Live card demo (LiveCardDemo.astro), from the previous home stylesheet ── */
-.home-demo .demo { min-width: 0; padding: 0; border: 0; border-radius: 0; background: transparent; scroll-margin-top: 6rem; }
-  .home-demo .demo .demo-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .5rem 1rem; padding: 0 0 .875rem; }
+.home-demo .demo { container-type: inline-size; min-width: 0; padding: 0; border: 0; border-radius: 0; background: transparent; scroll-margin-top: 6rem; }
+  .home-demo .demo .demo-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .25rem; padding: 0 0 .875rem; }
   .home-demo .demo h2 { font-size: .875rem; font-weight: 600; }
   .home-demo .demo .demo-subject { flex: 1; max-width: 15rem; min-width: 0; }
   .home-demo .demo select { width: 100%; max-width: 100%; min-height: 2.75rem; border: 1px solid #dde1e4; border-radius: .5rem; background-color: #fff; color: #24292c; font-size: .875rem; padding: .5rem 2.25rem .5rem .75rem; }
-  .home-demo .demo .demo-paper { border: 1px solid #e1e5e8; border-radius: .5rem; background: #fff; padding: 1.75rem; border-color: #cdd8d5; }
+  .home-demo .demo .demo-paper { border: 1px solid #e1e5e8; border-radius: 20px; background: #fff; padding: 1.25rem; }
   .home-demo .demo .demo-instruction { font-size: .875rem; color: #596166; line-height: 1.65; }
   .home-demo .demo .demo-question { display: block; min-height: 11.5rem; padding-block: 2rem; font-size: 1.125rem; font-weight: 500; line-height: 1.75; white-space: pre-line; }
   .home-demo .demo .demo-question:focus-visible { outline-offset: .375rem; }
@@ -180,19 +180,18 @@ main:has(> .cta-band:last-child) + footer {
   .home-demo .demo .demo-extra { border-top: 1px solid #e9ecee; padding-top: 1rem; margin-bottom: 1.25rem; color: #596166; font-size: .875rem; line-height: 1.75; }
   .home-demo .demo .demo-answer { min-height: 5rem; display: flex; align-items: flex-end; }
   .home-demo .demo .demo-answer > div { width: 100%; }
-  .home-demo .demo .demo-answer .button-primary { width: 100%; font-size: .9375rem; }
+  .home-demo .demo .demo-answer .button-primary { width: 100%; min-height: 54px; font-size: 1.1875rem; font-weight: 700; }
   .home-demo .demo .demo-grades { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .375rem; margin-top: .5rem; }
-  .home-demo .demo .demo-grades button { min-height: 2.875rem; padding: .5rem .25rem; border-radius: .5rem; font-size: .875rem; font-weight: 600; }
+  .home-demo .demo .demo-grades button { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; min-height:3.5rem; padding:.5rem .25rem; border-radius:.5rem; font-size:.875rem; font-weight:600; }
+  .home-demo .demo .demo-grade-interval { font-size:.75rem; font-weight:500; font-variant-numeric:tabular-nums; }
   .home-demo .demo [data-demo-grade="again"] { color: #b02c25; background: #fcecea; }
   .home-demo .demo [data-demo-grade="hard"] { color: #8c4c07; background: #fcf1e3; }
   .home-demo .demo [data-demo-grade="good"] { color: #156d3e; background: #e6f4ec; }
   .home-demo .demo [data-demo-grade="easy"] { color: #205b94; background: #e8f0f8; }
-  .home-demo .demo .demo-navigation { display: flex; justify-content: space-between; align-items: center; gap: .5rem; margin-top: .5rem; }
-  .home-demo .demo .demo-navigation button, .home-demo .demo .demo-source a { display: inline-flex; min-height: 2.75rem; align-items: center; font-size: .875rem; color: #0e7469; font-weight: 500; }
-  .home-demo .demo .demo-navigation button { padding-inline: .25rem; }
-  .home-demo .demo .demo-navigation span { font-size: .875rem; font-variant-numeric: tabular-nums; color: #596166; }
-  .home-demo .demo .demo-source { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0 1rem; border-top: 1px solid #dde1e4; margin-top: .25rem; font-size: .875rem; color: #596166; }
-  .home-demo .demo .demo-source a { font-size: .875rem; text-decoration: underline; text-underline-offset: 3px; }
   .home-demo .demo .demo-footnote { font-size: .8125rem; line-height: 1.7; color: #596166; margin-top: .5rem; }
   @media (max-width: 480px) { .home-demo .demo { padding: 0; } .home-demo .demo .demo-paper { padding: 1.125rem; } .home-demo .demo .demo-question { font-size: 1.0625rem; min-height: 11rem; } }
 
+
+@container (max-width: 18rem) {
+  .home-demo .demo .demo-grades { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

@@ -1,3 +1,5 @@
+import { setupDemoControls, type DemoDeckChoice } from './demoControls';
+
 type Part =
   | { type: 'text'; value: string }
   | { type: 'cloze'; index: number; answer: string; hint?: string };
@@ -16,6 +18,7 @@ interface DeckNode {
 
 interface Card {
   id: string;
+  personalAnswer?: string;
   deckId: string;
   course: string;
   ders: string;
@@ -82,7 +85,6 @@ function setupDemoSimulator(root: HTMLElement, payload: Payload): void {
     const homeBarEl = root.querySelector<HTMLElement>('[data-demo-homebar]');
     const resetBtn = root.querySelector<HTMLButtonElement>('[data-demo-reset]');
     const backBtn = root.querySelector<HTMLButtonElement>('[data-demo-back]');
-    const scopeBtn = root.querySelector<HTMLButtonElement>('[data-demo-scope]');
     const undoBtn = root.querySelector<HTMLButtonElement>('[data-demo-undo]');
     const deckTitleEl = root.querySelector<HTMLElement>('[data-demo-deck-title]');
     const scopeNewEl = root.querySelector<HTMLElement>('[data-scope-new]');
@@ -165,6 +167,7 @@ function setupDemoSimulator(root: HTMLElement, payload: Payload): void {
     let revealed = false;
     let reviewedToday = 0;
     const undoStack: UndoSnapshot[] = [];
+    const customDecks: DemoDeckChoice[] = [];
 
     function announce(msg: string) {
       if (liveEl) liveEl.textContent = msg;
@@ -172,6 +175,7 @@ function setupDemoSimulator(root: HTMLElement, payload: Payload): void {
 
     function syncChromeSurface(screen: 'decks' | 'study') {
       const isStudy = screen === 'study';
+      root.dataset.demoPage = screen;
       for (const el of [statusBarEl, homeBarEl]) {
         if (!el) continue;
         el.classList.toggle('bg-white', !isStudy);
@@ -273,7 +277,9 @@ function setupDemoSimulator(root: HTMLElement, payload: Payload): void {
         if (completeStage) completeStage.hidden = false;
         if (answerBarEl) answerBarEl.hidden = true;
         if (completeDescEl) {
-          completeDescEl.textContent = `“${deckMeta.title}” destesi için bugünlük tüm kartlar tamamlandı.`;
+          completeDescEl.textContent = payload.cards.some((item) => leafSet.has(item.deckId))
+            ? `“${deckMeta.title}” destesi için bu denemedeki tüm kartlar tamamlandı.`
+            : 'Bu destede henüz kart yok. Örnek kartları çalışmak için başka bir deste seçebilirsin.';
         }
         if (completeSubEl) {
           completeSubEl.textContent = `Bugün bu denemede ${reviewedToday} kart değerlendirdin.`;
@@ -307,6 +313,12 @@ function setupDemoSimulator(root: HTMLElement, payload: Payload): void {
         }
       }
 
+      if (revealed && card.personalAnswer && cardBodyEl) {
+        const answer = document.createElement('p');
+        answer.className = 'demo-personal-answer'; answer.textContent = card.personalAnswer; cardBodyEl.append(answer);
+      }
+      if (measuredEl) measuredEl.parentElement!.hidden = Boolean(card.personalAnswer);
+      if (refLinkEl) refLinkEl.hidden = Boolean(card.personalAnswer);
       if (cardBackEl) cardBackEl.hidden = !revealed;
       if (extraWrapEl && extraEl) {
         if (revealed && card.extra) {
@@ -503,7 +515,7 @@ function setupDemoSimulator(root: HTMLElement, payload: Payload): void {
 
     resetBtn?.addEventListener('click', () => resetAllDemo());
     backBtn?.addEventListener('click', () => returnToDecks({ moveFocus: true }));
-    scopeBtn?.addEventListener('click', () => returnToDecks({ moveFocus: true }));
+
     completeBackBtn?.addEventListener('click', () => returnToDecks({ moveFocus: true }));
     completeReplayBtn?.addEventListener('click', () => replayActiveDeck());
     undoBtn?.addEventListener('click', () => undo());
@@ -530,7 +542,7 @@ function setupDemoSimulator(root: HTMLElement, payload: Payload): void {
     });
 
     root.addEventListener('keydown', (e) => {
-      if (currentScreen !== 'study') return;
+      if (currentScreen !== 'study' || e.defaultPrevented || e.repeat || e.isComposing || e.altKey || e.ctrlKey || e.metaKey) return;
       const active = document.activeElement as HTMLElement | null;
       const tag = (active?.tagName || '').toLowerCase();
       if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
@@ -570,6 +582,60 @@ function setupDemoSimulator(root: HTMLElement, payload: Payload): void {
       }
     });
 
+    function deckChoices(): DemoDeckChoice[] {
+      const choices: DemoDeckChoice[] = [];
+      function visit(nodes: DeckNode[], depth: number) {
+        for (const node of nodes) {
+          const meta = deckMetaMap.get(node.id)!;
+          const counts = getCountsForLeafSet(new Set(meta.leafIds));
+          choices.push({ id: node.id, title: node.title, parentId: node.parentId, depth, counts: `${counts.new} yeni · ${counts.learning} öğrenme · ${counts.review} tekrar` });
+          visit(node.children, depth + 1);
+        }
+      }
+      visit(payload.decks, 0);
+      return [...choices, ...customDecks];
+    }
+    setupDemoControls(root, {
+      decks: deckChoices,
+      selectedDeck: () => activeDeckId ?? payload.decks[0].id,
+      selectDeck: (id) => openDeck(id, { focusStudy: false }),
+      openDecks: () => returnToDecks({ moveFocus: false }),
+      cards: () => payload.cards.map((card) => ({ id: card.id, deckId: card.deckId, title: card.parts.map((part) => part.type === 'text' ? part.value : '[…]').join('') })),
+      selectCard: (id) => {
+        const card = cardById.get(id); if (!card) return;
+        if (cardStates.get(id) === 'done') cardStates.set(id, card.initialBucket);
+        openDeck(card.deckId, { focusStudy: false });
+        queue = [id, ...queue.filter((other) => other !== id)]; renderStudy();
+      },
+      createDeck: (title) => {
+        const id = `personal-${customDecks.length}`;
+        customDecks.push({ id, title });
+        const row = document.createElement('div'); row.className = 'demo-deck-row'; row.dataset.deckRow = id;
+        const select = document.createElement('button'); select.type = 'button'; select.className = 'demo-deck-study-btn'; select.dataset.demoStudy = id;
+        select.setAttribute('aria-label', `${title} destesini çalış`);
+        const name = document.createElement('span'); name.className = 'demo-deck-title'; name.textContent = title;
+        const counts = document.createElement('span'); counts.className = 'demo-deck-counts';
+        for (const [bucket, column] of [['new', 'new'], ['learn', 'learn'], ['review', 'review']]) {
+          const count = document.createElement('span'); count.setAttribute(`data-count-${bucket}`, id); count.className = `demo-col-${column} text-inkMuted`; count.textContent = '0'; counts.append(count);
+        }
+        select.append(name, counts); select.addEventListener('click', () => openDeck(id)); row.append(select);
+        root.querySelector('[data-demo-deck-rows]')?.append(row);
+        deckMetaMap.set(id, { id, title, parentId: null, leafIds: [id], ancestorIds: [] });
+        return id;
+      },
+      addCard: (deckId, front, back) => {
+        // Parent scopes may receive a personal card too; include that parent in its leaf set.
+        for (const meta of deckMetaMap.values()) {
+          if (meta.id === deckId || deckMetaMap.get(deckId)?.ancestorIds.includes(meta.id)) {
+            if (!meta.leafIds.includes(deckId)) meta.leafIds.push(deckId);
+          }
+        }
+        const id = `personal-card-${payload.cards.length}`;
+        const card: Card = { id, deckId, personalAnswer: back, course: deckMetaMap.get(deckId)?.title ?? '', ders: '', topic: '', sinav: '', qid: id, verifiedLabel: 'Kendi deneme kartın', olculenBilgi: '', cardId: id, activeCloze: 1, parts: [{ type: 'text', value: front }], extra: '', initialBucket: 'new', intervals: { again: '1 dk', hard: '6 dk', good: '10 dk', easy: '4 gün' } };
+        payload.cards.push(card); cardById.set(id, card); cardStates.set(id, 'new');
+        openDeck(deckId, { focusStudy: false }); queue = [id, ...queue.filter((other) => other !== id)]; renderStudy(); renderDeckCounts();
+      },
+    });
     renderDeckCounts();
     renderTreeVisibility();
   }

@@ -4,6 +4,39 @@
 >
 > **Kısa sözleşme:** `website/AGENTS.md` · **İçerik & kanıt sözleşmesi:** `docs/WEBSITE_CONTENT_RULES.md` · **Kök uygulama sözleşmesi:** `AGENTS.md`
 
+## 28 Kasım 2026 — Uygulamayla eşleşen kart demosu
+
+- Ana sayfanın genişletilmiş tableti Desteler ekranından başlar: TUS Kartları →
+  Temel/Klinik Bilimler → 11 örnek ders. Üst deste seçimi alt dersleri kapsar;
+  sayaçlar yalnız demo kartlarını sayar. Değerlendirme ve geri alma korunur.
+- Çalışma ekranındaki düğme, her genişlikte açılıp kapanan bir menü gösterir.
+  Menüde yalnız deste ağacı ve ana listeye dönen Desteler düğmesi vardır. İlk
+  Desteler ekranında üç çizgi yoktur. Alt araç çubuğu iki demodan da kaldırılmıştır.
+- Ortak deste seçici uygulamanın düzenini izler: Tüm desteler, hiyerarşik satırlar,
+  seçili deste işareti, başlıkta arama/yeni deste ve İptal. Arama ve oluşturma
+  aynı pencerenin adımlarıdır; geri dönüş açılmış dalları korur. Kapatma, Escape,
+  perdeyle kapama ve odak dönüşü çalışır. Kart ve pencere gövdeleri kendi içinde
+  kayar; çalışma başlığı ve cevap düğmeleri sabit kalır.
+- Ana demoda kartın altındaki Önceki/Sonraki düğmeleri, kart sayacı ve referans
+  satırı kaldırıldı. Referans sayfaları ve bölümün dış açıklamaları korunur.
+- Tekrar/Zor/İyi/Kolay düğmelerinin üzerinde `<1dk`, `<6dk`, `<10dk`, `8 gün`
+  görünür. `website/src/lib/demoFsrs.ts` uygulamanın öğrenme adımlarını,
+  FSRS-6 varsayılan parametrelerini, %90 hedef hatırlamayı ve ortak süre
+  biçimlendirmesini kullanır. Bu statik ilk-yanıt örneğinde kişisel optimizasyon,
+  geçmiş veya kart kimliğine göre fuzz yoktur; dış açıklama bu sınırı belirtir.
+- Hedef dalın mevcut katalog/örnek metinleri ve gerçek uygulamanın
+  zamanlama/saklama davranışı değişmedi. Deste listesi stilleri ortak dosyada tutulur.
+- Kaynak iş: `45d3ee81`. Bu aktarım yalnız demo dosyalarını taşır; hedef
+  dalın diğer sayfaları ve kaynak verisi korunur. Hedef dalın mevcut ana sayfa
+  düzeninde LiveCardDemo kullanılır; animasyon bağımlılığı demo içinde tanımlıdır.
+  Yerel önizleme sahibinin isteğiyle açık bırakılır.
+- Hedef dal doğrulaması: website build + verify başarılı (72 HTML, 71 sitemap
+  URL’si); buildde değişmeyen rehber sayfasına ait üç kullanılmayan-import ipucu
+  vardır. Kök quality başarılı: 4.146 test geçti, 5 atlandı. Chromium/WebKit
+  × 320/390/1440 px × iki demo: 12 menü akışı ve 330 kart kontrolü geçti.
+  Hedef dalın 11 ana/44 tablet örneği korunur. Kanıtlar sohbet çalışma alanının
+  `release-demo/` klasöründedir. Fiziksel iPhone/VoiceOver testi yapılmadı.
+
 ## 26 Kasım 2026 — TUS Yazıları 8 → 20 yazı ve arka plan içerik sözleşmesi
 
 - `/rehber/` kütüphanesi 8 yazıdan **20 yazıya** çıktı (`part4.ts`–`part7.ts`): TUS tercihi, yabancı

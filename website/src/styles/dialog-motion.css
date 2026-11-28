@@ -1,0 +1,35 @@
+/* Keep the native modal and its focus trap presented for the whole exit. */
+dialog[data-dialog-motion], dialog[data-dialog-motion]::backdrop {
+  --dialog-exit-duration: var(--motion-popover-exit);
+  --dialog-duration: var(--motion-popover);
+}
+dialog[data-dialog-motion] {
+  --dialog-closed-pose: scale(var(--motion-popover-scale));
+  opacity: 0;
+  transform: var(--dialog-closed-pose);
+  transform-origin: center top;
+  transition: opacity var(--dialog-duration) var(--motion-ease-out),
+    transform var(--dialog-duration) var(--motion-ease-out);
+}
+dialog[data-dialog-motion="drawer"], dialog[data-dialog-motion="drawer"]::backdrop {
+  --dialog-exit-duration: var(--motion-panel-exit);
+  --dialog-duration: var(--motion-panel);
+}
+dialog[data-dialog-motion="drawer"] { --dialog-closed-pose: translateX(100%); }
+dialog[data-dialog-motion]::backdrop {
+  opacity: 0;
+  transition: opacity var(--dialog-duration) var(--motion-ease-out);
+}
+dialog[data-dialog-motion][data-dialog-state="open"] { opacity: 1; transform: none; }
+dialog[data-dialog-motion][data-dialog-state="open"]::backdrop { opacity: 1; }
+dialog[data-dialog-motion][data-dialog-state="closing"],
+dialog[data-dialog-motion][data-dialog-state="closing"]::backdrop { --dialog-duration: var(--dialog-exit-duration); }
+dialog[data-dialog-motion][data-dialog-state="closing"] > * { pointer-events: none; }
+
+/* The page stays put while either modal is open, including its exit. */
+html:has(dialog[data-dialog-motion][open]) { overflow: hidden; scrollbar-gutter: stable; }
+
+@media (prefers-reduced-motion: reduce) {
+  dialog[data-dialog-motion], dialog[data-dialog-motion]::backdrop { transition: none; }
+  dialog[data-dialog-motion] { transform: none; }
+}

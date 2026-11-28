@@ -1,17 +1,33 @@
 ---
+import DemoControls from './demo/DemoControls.astro';
+import IpadFrame from './demo/IpadFrame.astro';
+import DemoIcons from './demo/DemoIcons.astro';
+import DemoDeckList from './demo/DemoDeckList.astro';
 import demoCards from '../data/generated/demo-cards.json';
+import { INITIAL_FSRS_INTERVALS } from '../lib/demoFsrs';
 const first = demoCards[0];
 ---
-<section id="demo" class="demo" aria-labelledby="demo-heading" data-live-demo data-cards-url="/data/demo-cards.json">
+<section id="demo" class="demo" aria-labelledby="demo-heading" data-live-demo data-demo-page="decks" data-card-count={demoCards.length} data-cards-url="/data/demo-cards.json">
+  <h2 id="demo-heading" class="sr-only">Örnek desteler ve kart çalışma</h2>
+  <IpadFrame>
+  <div class="demo-app-shell">
+  <div class="demo-reviewer">
+  <DemoDeckList decks={[]} cards={[]} />
+  <div data-demo-screen="study" hidden class="demo-study-view">
   <div class="demo-toolbar">
-    <h2 id="demo-heading">Örnek kart</h2>
-    <div class="demo-subject">
-      <label for="demo-subject" class="sr-only">Deneme kartı dersi</label>
-      <select id="demo-subject" data-demo-subject disabled>
-        {demoCards.map((card, index) => <option value={index}>{card.ders}</option>)}
-      </select>
-    </div>
+    <button type="button" data-demo-back class="demo-menu-button" aria-label="Destelere dön"><DemoIcons name="back" /></button>
+    <button type="button" data-demo-menu disabled class="demo-menu-button" aria-label="Uygulama menüsünü aç" aria-haspopup="dialog"><DemoIcons name="menu" /></button>
+    <button type="button" data-demo-scope disabled class="demo-home-scope" aria-label="Deste seç" aria-haspopup="dialog">
+      <span data-demo-deck-title>TUS Kartları</span>
+      <span class="demo-home-counts" aria-label="Yeni, öğrenme ve tekrar kartları">
+        <span data-demo-new-count class="is-current">{demoCards.length}</span><span data-demo-learn-count>0</span><span>0</span>
+        <DemoIcons name="chevron-down" size={20} />
+      </span>
+    </button>
+    <button type="button" data-home-undo disabled class="demo-home-undo" aria-label="Son değerlendirmeyi geri al"><DemoIcons name="undo" /></button>
   </div>
+  <div class="demo-card-scroll" data-demo-scroll>
+  <div class="demo-context"><span data-demo-course>{first.ders}</span><DemoIcons name="chevron-right" size={15} /><span>Örnek kart</span></div>
   <div class="demo-paper">
     <p class="demo-instruction">Boşluğu tahmin et, cevabı aç.</p>
     <div data-demo-body class="demo-question" tabindex="0" aria-label="Örnek çalışma kartı" aria-keyshortcuts="Space Enter ArrowLeft ArrowRight">
@@ -20,6 +36,8 @@ const first = demoCards[0];
         : <span>{part.type === 'cloze' ? part.answer : part.value}</span>)}
     </div>
     <p data-demo-extra hidden class="demo-extra"></p>
+  </div>
+  </div>
     <div class="demo-answer">
       <div data-demo-reveal-wrap>
         <button type="button" data-demo-reveal disabled class="button-primary">Cevabı göster</button>
@@ -29,21 +47,16 @@ const first = demoCards[0];
         <div class="demo-grades">
           {[
             ['again', 'Tekrar'], ['hard', 'Zor'], ['good', 'İyi'], ['easy', 'Kolay'],
-          ].map(([value, label]) => <button type="button" data-demo-grade={value}>{label}</button>)}
+          ].map(([value, label]) => <button type="button" data-demo-grade={value}><span data-demo-interval={value} class="demo-grade-interval">{INITIAL_FSRS_INTERVALS[value as keyof typeof INITIAL_FSRS_INTERVALS]}</span><span>{label}</span></button>)}
         </div>
       </div>
     </div>
   </div>
-  <div class="demo-navigation">
-    <button type="button" data-demo-prev disabled aria-label="Önceki kart">Önceki</button>
-    <span data-demo-counter>Kart 1 / {demoCards.length}</span>
-    <button type="button" data-demo-next disabled aria-label="Sonraki kart">Sonraki</button>
+  <DemoControls prefix="home-demo" />
   </div>
-  <p class="demo-source">
-    <span data-demo-source>{first.sinav} TUS · {first.qid.split('-')[1]} · Doğrudan</span>
-    <a data-demo-ref-link href={`/referanslar/?sinav=${encodeURIComponent(first.sinav)}&ders=${encodeURIComponent(first.ders)}&q=${first.qid.split('-')[1]}`}>Referans kaydı</a>
-  </p>
-  <p class="demo-footnote">11 gerçek kart · Sınav öncesi katalogdan (<code>a78ae1f</code>). Bu denemedeki yanıtlar saklanmaz.</p>
+  </div>
+  </IpadFrame>
+  <p class="demo-footnote">11 kart örneği · Güncel katalogdan uyarlanmıştır. İlgili bilgi, ön değerlendirmede sınav öncesi <code>a78ae1f</code> sürümünde de var olarak işaretlenmiştir. Bu denemedeki yanıtlar saklanmaz. Süreler varsayılan FSRS-6 başlangıç örneğidir; kişisel FSRS hesabı yapılmaz.</p>
   <p data-demo-status role="status" class="demo-footnote">Kartlar yükleniyor…</p>
   <button type="button" data-demo-retry hidden class="text-link">Yeniden yükle</button>
   <noscript><p class="demo-footnote">Kartları denemek için JavaScript’i açabilir veya referans kayıtlarını inceleyebilirsin.</p></noscript>
@@ -53,104 +66,6 @@ const first = demoCards[0];
 
 
 <script>
-  document.querySelectorAll<HTMLElement>('[data-live-demo]').forEach((root) => {
-    type Part = { type: 'text'; value: string } | { type: 'cloze'; index: number; answer: string; hint?: string };
-    type Card = { qid: string; sinav: string; ders: string; activeCloze?: number; parts: Part[]; extra: string };
-    let cards: Card[] = [];
-    const subject = root.querySelector<HTMLSelectElement>('[data-demo-subject]')!;
-    const body = root.querySelector<HTMLElement>('[data-demo-body]')!;
-    const extra = root.querySelector<HTMLElement>('[data-demo-extra]')!;
-    const revealWrap = root.querySelector<HTMLElement>('[data-demo-reveal-wrap]')!;
-    const revealButton = root.querySelector<HTMLButtonElement>('[data-demo-reveal]')!;
-    const grades = root.querySelector<HTMLElement>('[data-demo-grades]')!;
-    const counter = root.querySelector<HTMLElement>('[data-demo-counter]')!;
-    const source = root.querySelector<HTMLElement>('[data-demo-source]')!;
-    const reference = root.querySelector<HTMLAnchorElement>('[data-demo-ref-link]')!;
-    const live = root.querySelector<HTMLElement>('[data-demo-live]')!;
-    const status = root.querySelector<HTMLElement>('[data-demo-status]')!;
-    const retry = root.querySelector<HTMLButtonElement>('[data-demo-retry]')!;
-    let current = 0;
-    let revealed = false;
-
-    function render() {
-      const card = cards[current];
-      subject.value = String(current);
-      body.replaceChildren();
-      for (const part of card.parts) {
-        if (part.type === 'cloze' && part.index === (card.activeCloze ?? 1)) {
-          const span = document.createElement('span');
-          span.className = revealed ? 'demo-cloze-revealed' : 'demo-cloze';
-          span.textContent = revealed ? part.answer : part.hint ? `[${part.hint}]` : '[…]';
-          body.append(span);
-        } else {
-          body.append(document.createTextNode(part.type === 'cloze' ? part.answer : part.value));
-        }
-      }
-      extra.textContent = card.extra;
-      extra.hidden = !revealed || !card.extra;
-      revealWrap.hidden = revealed;
-      grades.hidden = !revealed;
-      counter.textContent = `Kart ${current + 1} / ${cards.length}`;
-      source.textContent = `${card.sinav} TUS · ${card.qid.split('-')[1]} · Doğrudan`;
-      reference.href = `/referanslar/?sinav=${encodeURIComponent(card.sinav)}&ders=${encodeURIComponent(card.ders)}&q=${encodeURIComponent(card.qid.split('-')[1])}`;
-    }
-    function select(index: number) {
-      if (!cards.length) return;
-      current = (index + cards.length) % cards.length;
-      revealed = false;
-      render();
-      live.textContent = `${cards[current].ders}. Kart ${current + 1} / ${cards.length}.`;
-    }
-    function reveal() {
-      if (revealed || !cards.length) return;
-      const moveFocus = document.activeElement === revealButton || document.activeElement === body;
-      revealed = true;
-      render();
-      live.textContent = `Cevap: ${cards[current].parts.filter((part) => part.type === 'cloze' && part.index === (cards[current].activeCloze ?? 1)).map((part) => part.type === 'cloze' ? part.answer : '').join(', ')}.`;
-      if (moveFocus) root.querySelector<HTMLButtonElement>('[data-demo-grade="good"]')?.focus({ preventScroll: true });
-    }
-    subject.addEventListener('change', () => select(Number(subject.value)));
-    revealButton.addEventListener('click', reveal);
-    root.querySelector('[data-demo-prev]')?.addEventListener('click', () => select(current - 1));
-    root.querySelector('[data-demo-next]')?.addEventListener('click', () => select(current + 1));
-    function grade() {
-      select(current + 1);
-      revealButton.focus({ preventScroll: true });
-    }
-    root.querySelectorAll<HTMLButtonElement>('[data-demo-grade]').forEach((button) => button.addEventListener('click', grade));
-    root.addEventListener('keydown', (event) => {
-      if (event.defaultPrevented || event.isComposing || event.target === subject || event.altKey || event.ctrlKey || event.metaKey) return;
-      if (event.target === body && (event.key === 'ArrowLeft' || event.key === 'ArrowRight')) {
-        event.preventDefault();
-        if (!event.repeat) select(current + (event.key === 'ArrowLeft' ? -1 : 1));
-      } else if ((event.key === ' ' || event.key === 'Enter') && event.target === body && !revealed) {
-        event.preventDefault();
-        if (!event.repeat) reveal();
-      } else if (revealed && /^[1-4]$/.test(event.key)) {
-        event.preventDefault();
-        if (!event.repeat) grade();
-      }
-    });
-    async function loadCards() {
-      retry.hidden = true;
-      status.textContent = 'Kartlar yükleniyor…';
-      try {
-        const response = await fetch(root.dataset.cardsUrl!);
-        if (!response.ok) throw new Error('Demo request failed');
-        const data: Card[] = await response.json();
-        if (!Array.isArray(data) || data.length !== subject.options.length || data.some((card) => !Array.isArray(card.parts) || !card.qid)) {
-          throw new Error('Invalid demo data');
-        }
-        cards = data;
-        render();
-        root.querySelectorAll<HTMLButtonElement | HTMLSelectElement>('button, select').forEach((control) => { control.disabled = false; });
-        status.hidden = true;
-      } catch {
-        status.textContent = 'Kartlar yüklenemedi. Yeniden deneyebilir veya referans kayıtlarını inceleyebilirsin.';
-        retry.hidden = false;
-      }
-    }
-    retry.addEventListener('click', loadCards);
-    void loadCards();
-  });
+  import { initLiveCardDemos } from '../scripts/liveCardDemo';
+  initLiveCardDemos();
 </script>
