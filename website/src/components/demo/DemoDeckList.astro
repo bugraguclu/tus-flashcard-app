@@ -113,6 +113,7 @@ flatten(decks, 0);
             <button
               type="button"
               data-demo-toggle={row.id}
+              disabled
               aria-expanded={row.expanded ? 'true' : 'false'}
               aria-label={`${row.title} alt destelerini aç veya kapat`}
               class="demo-deck-toggle"
@@ -126,6 +127,7 @@ flatten(decks, 0);
           <button
             type="button"
             data-demo-study={row.id}
+            disabled
             aria-label={`${row.title} destesini çalış`}
             class="demo-deck-study-btn"
           >

@@ -16,10 +16,25 @@ for (const engine of ['chromium', 'webkit']) {
         console.log(`${engine} ${width}px ${mode}`);
         const page = await browser.newPage({ viewport: { width, height: 1000 }, reducedMotion: 'reduce' });
         const errors = []; page.on('pageerror', (error) => errors.push(error.message));
+        let releasePayload;
+        if (mode === 'tablet' && width === 320) {
+          const payloadGate = new Promise((resolve) => { releasePayload = resolve; });
+          await page.route('**/data/demo-decks.json', async (route) => {
+            await payloadGate;
+            await route.continue();
+          });
+        }
         await page.goto(origin + (mode === 'home' ? '/' : '/kart-denemesi/'));
         const root = page.locator(mode === 'home' ? '[data-live-demo]' : '[data-demo-simulator]');
         const rootDeck = mode === 'home' ? 'tus-cards' : 'tus-deneme';
         await root.locator(`[data-demo-study="${rootDeck}"]`).waitFor();
+        if (releasePayload) {
+          assert(await root.locator(`[data-demo-study="${rootDeck}"]`).isDisabled(), 'Deck acts before cards load');
+          assert.equal(await root.getAttribute('aria-busy'), 'true');
+          await root.locator(`[data-demo-study="${rootDeck}"]`).click({ force: true });
+          assert(await root.locator('[data-demo-screen=decks]').isVisible());
+          releasePayload();
+        }
         const dialog = root.locator('[data-demo-dialog]');
         const close = async () => { await page.keyboard.press('Escape'); await dialog.waitFor({ state: 'hidden' }); };
         const menu = root.locator('[data-demo-menu]');

@@ -62,13 +62,17 @@ export function initDemoSimulators(): void {
     // is already in the markup. A failed load offers a retry instead of a dead simulator.
     const retryBtn = root.querySelector<HTMLButtonElement>('[data-demo-retry]');
     const load = async () => {
+      root.setAttribute('aria-busy', 'true');
       if (retryBtn) retryBtn.hidden = true;
       try {
         const response = await fetch(root.dataset.decksUrl!);
         if (!response.ok) throw new Error(String(response.status));
         setupDemoSimulator(root, (await response.json()) as Payload);
+        root.querySelectorAll<HTMLButtonElement>('[data-demo-deck-rows] button').forEach((button) => { button.disabled = false; });
       } catch {
         if (retryBtn) retryBtn.hidden = false;
+      } finally {
+        root.setAttribute('aria-busy', 'false');
       }
     };
     retryBtn?.addEventListener('click', () => void load());

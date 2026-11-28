@@ -18,3 +18,10 @@
 - `TUSANKIM_WEB_BASE=/uygulama npm run build:web -- --output-dir .expo/vercel-web` ve aynı taban yolu ile `scripts/assemble-vercel.mjs` başarılı.
 - Üretim paketi üzerinde Chromium/WebKit × 320/390/1440 px × iki demo: 12 gezinme akışı başarılı; 330 kart göster/cevapla kontrolü başarılı.
 - App Store işletmeci/adres/iletişim yer tutucusu uyarısı sürüyor. Bu web yayınıdır; fiziksel iPhone veya App Store gönderim onayı değildir.
+
+## İlk canlı kontrolde bulunan yükleme yarışı
+
+- İlk yayın `1ba5b054` Vercel ve CI'de başarılı tamamlandı. Gerçek canlı adreste ilk tablet tıklaması, JSON isteği bitmeden yapılınca boşa gidebiliyordu.
+- Tablet deste satırları sunucu HTML'sinde artık pasif başlıyor; veri ve olay işleyicileri hazır olunca etkinleşiyor. `aria-busy` yükleme durumunu bildiriyor. Başarısız istekte mevcut yeniden yükleme düğmesi korunuyor.
+- Tarayıcı regresyonu Chromium ve WebKit'te 320 px tablet JSON yanıtını bilerek bekletiyor; yükleme boyunca düğmenin pasif olduğunu ve veri serbest bırakılınca ilk tıklamanın çalıştığını doğruluyor. Toplam 12 gezinme akışı yeniden geçti.
+- Düzeltmeden sonra `npm run quality` yeniden başarılı (4.082 test, beş atlanan); website build/verify ve Vercel paket birleştirme tekrar başarılı.

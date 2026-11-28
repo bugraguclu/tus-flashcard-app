@@ -10,7 +10,7 @@ import DemoStudyScreen from './demo/DemoStudyScreen.astro';
 const decks = demoDecks.decks as DeckNode[];
 const cards = demoDecks.cards as DemoDeckCard[];
 ---
-<div id="demo" data-demo-simulator data-decks-url="/data/demo-decks.json">
+<div id="demo" data-demo-simulator data-decks-url="/data/demo-decks.json" aria-busy="true">
   <IpadFrame>
     <DemoDeckList decks={decks} cards={cards} />
     <DemoStudyScreen />
